@@ -10,20 +10,25 @@ class TrainingData:
 		with tf.variable_scope(None,default_name="ImagePairData"):
 			borderThicknessH = instanceParams["borderThicknessH"]
 			borderThicknessW = instanceParams["borderThicknessW"]
-			if instanceParams["dataset"] == "kitti2012" or instanceParams["dataset"] == "kitti2015":
-				datasetRoot = "../example_data/"
-				frame0Path = datasetRoot+"datalists/train_im0.txt"
-				frame1Path = datasetRoot+"datalists/train_im1.txt"
-				desiredHeight = 320
-				desiredWidth = 1152
-			elif instanceParams["dataset"] == "sintel":
-				datasetRoot = "/home/jjyu/datasets/Sintel/"
-				frame0Path = datasetRoot+"datalists/train_raw_im0.txt"
-				frame1Path = datasetRoot+"datalists/train_raw_im1.txt"
-				desiredHeight = 384
-				desiredWidth = 960
-			else:
-				assert False, "unknown dataset: " + instanceParams["dataset"]
+			# if instanceParams["dataset"] == "kitti2012" or instanceParams["dataset"] == "kitti2015":
+			# 	datasetRoot = "../example_data/"
+			# 	frame0Path = datasetRoot+"datalists/train_im0.txt"
+			# 	frame1Path = datasetRoot+"datalists/train_im1.txt"
+			# 	desiredHeight = 320
+			# 	desiredWidth = 1152
+			# elif instanceParams["dataset"] == "sintel":
+			# 	datasetRoot = "/home/jjyu/datasets/Sintel/"
+			# 	frame0Path = datasetRoot+"datalists/train_raw_im0.txt"
+			# 	frame1Path = datasetRoot+"datalists/train_raw_im1.txt"
+			# 	desiredHeight = 384
+			# 	desiredWidth = 960
+			# else:
+			# 	assert False, "unknown dataset: " + instanceParams["dataset"]
+            datasetRoot = '../example_data'
+            frame0Path = datasetRoot + 'datalists/train_im0.txt'
+            frame1Path = datasetRoot + 'datalists/train_im1.txt'
+            desiredHeight = 480
+            desiredWidth = 854
 
 
 			# create data readers
@@ -44,7 +49,7 @@ class TrainingData:
 			## queuing complete
 
 			# mean subtraction
-			mean = [[[[0.448553, 0.431021, 0.410602]]]]
+			mean = [[[[0.407871, 0.457525, 0.481094]]]]
 			img0raw = tf.cast(batch[0],tf.float32)/255.0 - mean
 			img1raw = tf.cast(batch[1],tf.float32)/255.0 - mean
 

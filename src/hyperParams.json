@@ -1,9 +1,9 @@
 {
   "lossComponents": {
-    "gradient": true,
+    "gradient": false,
     "boundaries": false,
-    "smooth2nd": true,
-    "backward": true,
+    "smooth2nd": false,
+    "backward": false,
     "asymmetricSmooth": true
   },
   "weightDecay": 0.0,
@@ -29,7 +29,7 @@
     "robustness": 0.46,
     "weight": 6.408
   },
-  "dataset": "DAVIS",
+  "dataset": "kitti2012",
   "smooth2ndParams": {
     "scale": 1.0,
     "robustness": 0.21,

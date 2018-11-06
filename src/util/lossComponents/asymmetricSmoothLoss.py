@@ -34,7 +34,7 @@ def asymmetricSmoothLoss(flow,gt,instanceParams,occMask,validPixelMask,img0Grad=
 
 
 import math
-def vis_flow(flow,zeroFlow="value"):
+def vis_flow(flow,zeroFlow="saturation"):
     with tf.variable_scope(None,default_name="flowToRgb"):
         mag = tf.sqrt(tf.reduce_sum(flow**2,axis=-1))
         ang180 = tf.atan2(flow[:,:,:,1],flow[:,:,:,0])

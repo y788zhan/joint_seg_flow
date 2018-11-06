@@ -29,7 +29,6 @@ def asymmetricSmoothLoss(flow,gt,instanceParams,occMask,validPixelMask,img0Grad=
 		# valid = smoothLossMaskCorrection(validPixelMask)
 		# smooth = nonOccSmooth + occSmooth
 		# return smooth*valid
-		gt = 2 * gt - 1 # make 1 and -1 
 		return smoothLoss(flowValid, gt, alpha, beta, None, img0Grad, boundaryAlpha)
 
 

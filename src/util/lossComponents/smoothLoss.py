@@ -51,7 +51,7 @@ def smoothLoss(flow,gt,alpha,beta,validPixelMask=None,img0Grad=None,boundaryAlph
 		flowShape = flow.get_shape()
 
 		gtMask = tf.nn.conv2d(gt,kernel,[1,1,1,1],padding="SAME")
-		gtMask = tf.square(gtMask / 2)
+		gtMask = 1 - tf.square(gtMask)
 		#tf.summary.image("downMask", gtMask[:,:,:,0])
 		neighborDiffU = tf.nn.conv2d(u,kernel,[1,1,1,1],padding="SAME") * gtMask
 		neighborDiffV = tf.nn.conv2d(v,kernel,[1,1,1,1],padding="SAME") * gtMask

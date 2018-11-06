@@ -27,6 +27,7 @@ class TrainingData:
 			datasetRoot = '../example_data/'
 			frame0Path = datasetRoot + 'datalists/train_im0.txt'
 			frame1Path = datasetRoot + 'datalists/train_im1.txt'
+			gt0Path = datasetRoot + 'datalists/train_gt0.txt'
 			desiredHeight = 480
 			desiredWidth = 854
 
@@ -34,11 +35,12 @@ class TrainingData:
 			# create data readers
 			frame0Reader = data_input.reader.Png(datasetRoot,frame0Path,3)
 			frame1Reader = data_input.reader.Png(datasetRoot,frame1Path,3)
+			gt0Reader = data_input.reader.Png(datasetRoot, gt0Path, 1)
 			#create croppers since kitti images are not all the same size
 			cropShape = [desiredHeight,desiredWidth]
 			cropper = data_input.pre_processor.SharedCrop(cropShape,frame0Reader.data_out)
-			dataReaders = [frame0Reader,frame1Reader]
-			DataPreProcessors = [[],[]]
+			dataReaders = [frame0Reader,frame1Reader, gt0Reader]
+			DataPreProcessors = [[],[], []]
 			self.dataQueuer = data_input.DataQueuer(dataReaders,DataPreProcessors,n_threads=batchSize*4)
 			# place data into batches, order of batches matches order of datareaders
 			batch = self.dataQueuer.queue.dequeue_many(batchSize)
@@ -49,6 +51,7 @@ class TrainingData:
 			mean = [[[[0.407871, 0.457525, 0.481094]]]]
 			img0raw = tf.cast(batch[0],tf.float32)/255.0 - mean
 			img1raw = tf.cast(batch[1],tf.float32)/255.0 - mean
+			gt0raw = tf.cast(batch[2], tf.float32)
 			## async section done ##
 
 			#image augmentation
@@ -81,7 +84,8 @@ class TrainingData:
 			self.frame0 = {
 				"rgb": imData0aug,
 				"rgbNorm": lrn0,
-				"grad": imData0Grad
+				"grad": imData0Grad,
+				"gt": gt0raw
 			}
 
 			self.frame1 = {

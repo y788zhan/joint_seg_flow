@@ -6,6 +6,5 @@ def flowRefinementConcat(prev,skip,flow):
 	with tf.variable_scope(None,default_name="flowRefinementConcat"):
 		with tf.variable_scope(None,default_name="upsampleFlow"):
 			upsample = deconvLayer(flow,4,2,2)
-		prev = tf.image.resize_images(prev, skip.shape[1:3])
 		upsample = tf.image.resize_images(upsample, skip.shape[1:3])
 		return tf.concat([prev,skip,upsample],3)

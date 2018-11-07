@@ -17,4 +17,4 @@ class Png(DataReader):
 			self.data_path = img_path
 			self.data_out = img
 			self.data_type = dtype
-			self.data_shape = [480,854,channels]
+			self.data_shape = [-1,-1,channels]

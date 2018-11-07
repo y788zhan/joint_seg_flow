@@ -25,12 +25,11 @@ class TrainingData:
 			# else:
 			# 	assert False, "unknown dataset: " + instanceParams["dataset"]
 			datasetRoot = '../example_data/'
-			frame0Path = datasetRoot + 'datalists/train_im0.txt'
-			frame1Path = datasetRoot + 'datalists/train_im1.txt'
-			gt0Path = datasetRoot + 'datalists/train_gt0.txt'
-			desiredHeight = 480
-			desiredWidth = 854
-
+			frame0Path = datasetRoot + 'datalists/kitti_train_im0.txt'
+			frame1Path = datasetRoot + 'datalists/kitti_train_im1.txt'
+			gt0Path = datasetRoot + 'datalists/kitti_train_gt0.txt'
+			desiredHeight = 370
+			desiredWidth = 1225
 
 			# create data readers
 			frame0Reader = data_input.reader.Png(datasetRoot,frame0Path,3)
@@ -40,7 +39,7 @@ class TrainingData:
 			cropShape = [desiredHeight,desiredWidth]
 			cropper = data_input.pre_processor.SharedCrop(cropShape,frame0Reader.data_out)
 			dataReaders = [frame0Reader,frame1Reader, gt0Reader]
-			DataPreProcessors = [[],[], []]
+			DataPreProcessors = [[cropper],[cropper],[cropper]]
 			self.dataQueuer = data_input.DataQueuer(dataReaders,DataPreProcessors,n_threads=batchSize*4)
 			# place data into batches, order of batches matches order of datareaders
 			batch = self.dataQueuer.queue.dequeue_many(batchSize)
@@ -48,7 +47,8 @@ class TrainingData:
 			## queuing complete
 
 			# mean subtraction
-			mean = [[[[0.407871, 0.457525, 0.481094]]]]
+			# mean = [[[[0.407871, 0.457525, 0.481094]]]]
+			mean = [[[[0.448553, 0.431021, 0.410602]]]]
 			img0raw = tf.cast(batch[0],tf.float32)/255.0 - mean
 			img1raw = tf.cast(batch[1],tf.float32)/255.0 - mean
 			gt0raw = tf.cast(batch[2], tf.float32)

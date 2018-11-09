@@ -37,6 +37,7 @@ def unsupFlowLoss(flow,flowB,frame0,frame1,validPixelMask,instanceParams):
 		# masking from simple occlusion/border
 		occMask = borderOcclusionMask(flow) # occ if goes off image
 		occInvalidMask = validPixelMask*occMask # occluded and invalid
+		gt0 = gt0 / 255.0
 		# tf.summary.image("occlusionMask", occMask)
 		# tf.summary.image("occInvalidMask", occInvalidMask)
 		# loss components

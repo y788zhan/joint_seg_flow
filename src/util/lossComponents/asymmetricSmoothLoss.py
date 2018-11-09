@@ -11,25 +11,24 @@ def asymmetricSmoothLoss(flow,gt,instanceParams,occMask,validPixelMask,img0Grad=
 		beta = instanceParams["smoothParams"]["scale"]
 		occAlpha = instanceParams["smoothOccParams"]["robustness"]
 		occBeta = instanceParams["smoothOccParams"]["scale"]
-		
+
 		tf.summary.image("flow", vis_flow(flow))
 		# occluded
 		flowValid = flow*occMask
-		# flowInvalid = flow*(1.0-occMask)
-
+		flowInvalid = flow*(1.0-occMask)
 		# block gradients to valid flow
-		# flowValid = tf.stop_gradient(flowValid)
-		# routedFlow = flowValid + flowInvalid
-		# occSmooth = smoothLoss(routedFlow,occAlpha,occBeta,None,img0Grad,boundaryAlpha)
+		flowValid = tf.stop_gradient(flowValid)
+		routedFlow = flowValid + flowInvalid
+		occSmooth = smoothLoss(routedFlow, gt, occAlpha,occBeta,None,img0Grad,boundaryAlpha)
 
 		# non occluded
-		# nonOccSmooth = smoothLoss(flow,alpha,beta,occMask,img0Grad,boundaryAlpha)
+		nonOccSmooth = smoothLoss(flow, gt, alpha,beta,occMask,img0Grad,boundaryAlpha)
 
 		# final
-		# valid = smoothLossMaskCorrection(validPixelMask)
-		# smooth = nonOccSmooth + occSmooth
-		# return smooth*valid
-		return smoothLoss(flowValid, gt, alpha, beta, None, img0Grad, boundaryAlpha)
+		valid = smoothLossMaskCorrection(validPixelMask)
+		smooth = nonOccSmooth + occSmooth
+		return smooth*valid
+		# return smoothLoss(flow, gt, occAlpha, occBeta, None, img0Grad, boundaryAlpha)
 
 
 import math

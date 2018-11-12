@@ -19,7 +19,7 @@ class TrainingLoss:
 			# unsup loss
 			recLossF = unsupFlowLoss(predFlowF,predFlowB,frame0,frame1,vpm,instanceParams)
 			if lossComponents["backward"]:
-				recLossB = unsupFlowLoss(predFlowB,predFlowF,frame1,frame0,vpm,instanceParams)
+				recLossB = unsupFlowLoss(predFlowB,predFlowF,frame1,frame0,vpm,instanceParams, backward=True)
 
 			# weight decay
 			with tf.variable_scope(None,default_name="weightDecay"):
@@ -34,7 +34,7 @@ class TrainingLoss:
 					recLossB*recLossBWeight + \
 					weightLoss
 				tf.summary.scalar("recLossF",tf.reduce_mean(recLossF*(1.0-recLossBWeight)))
-				tf.summary.scalar("recLossB",tf.reduce_mean(recLossF*recLossBWeight))
+				tf.summary.scalar("recLossB",tf.reduce_mean(recLossB*recLossBWeight))
 			else:
 				totalLoss = recLossF + weightLoss
 				tf.summary.scalar("recLossF",tf.reduce_mean(recLossF))

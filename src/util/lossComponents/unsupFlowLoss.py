@@ -75,7 +75,8 @@ def unsupFlowLoss(flow,flowB,frame0,frame1,validPixelMask,instanceParams, backwa
 		tf.summary.scalar(smoothLossName,tf.reduce_mean(smoothAvg))
 
 		# final loss
-		finalLoss = photoAvg + smoothAvg
+		# finalLoss = photoAvg + smoothAvg
+		return photoAvg, smoothAvg
 		# if lossComponents["smooth2nd"]:
 			# tf.summary.scalar("smooth2ndLoss",tf.reduce_mean(smooth2ndAvg))
 			# finalLoss += smooth2ndAvg

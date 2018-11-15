@@ -38,7 +38,7 @@
   "snapshotFreq": 10000,
   "smoothParams": {
     "scale": 3.5,
-    "robustness": 0.35,
+    "robustness": 0.99,
     "weight": 20
   },
   "boundaryAlpha": 6.5,

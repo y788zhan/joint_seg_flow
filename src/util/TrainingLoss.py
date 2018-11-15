@@ -45,27 +45,8 @@ class TrainingLoss:
 
 			pGrad = tf.gradients(pLossF, predFlowF)[0]
 			sGrad = tf.gradients(sLossF, predFlowF)[0]
-			tf.summary.image("photo_gradients", gradToRgb(pGrad))
-			tf.summary.image("smooth_gradients", gradToRgb(sGrad))
+			tf.summary.image("photo_gradients", flowToRgb(pGrad, 'saturation'))
+			tf.summary.image("smooth_gradients", flowToRgb(sGrad, 'saturation'))
+			tf.summary.scalar("mean_photo_grad", tf.reduce_mean(tf.abs(pGrad)))
+			tf.summary.scalar("mean_smooth_grad", tf.reduce_mean(tf.abs(sGrad)))
 			self.loss = totalLoss
-
-import math
-def gradToRgb(g):
-	with tf.variable_scope(None,default_name="gradToRgb"):
-		mag = tf.sqrt(tf.reduce_sum(g**2,axis=-1))
-		ang180 = tf.atan2(g[:,:,:,1],g[:,:,:,0])
-		ones = tf.ones_like(mag)
-
-		# fix angle so righward motion is red
-		ang = ang180*tf.cast(tf.greater_equal(ang180,0),tf.float32)
-		ang += (ang180+2*math.pi)*tf.cast(tf.less(ang180,0),tf.float32)
-
-		# normalize for hsv
-		largestMag = tf.reduce_max(mag,axis=[1,2])
-		magNorm = tf.stack([mag[0,:,:]/largestMag[0], mag[1,:,:]/largestMag[1]], axis=0)
-		#magNorm = mag/largestMag
-		angNorm = ang/(math.pi*2)
-
-		hsv = tf.stack([angNorm,magNorm,ones],axis=-1)
-		rgb = tf.image.hsv_to_rgb(hsv)
-		return rgb

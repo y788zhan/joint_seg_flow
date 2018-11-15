@@ -59,8 +59,8 @@ class TrainingData:
 
 			#image augmentation
 			photoParam = photoAugParam(batchSize,0.7,1.3,0.2,0.9,1.1,0.7,1.5,0.00)
-			imData0aug = photoAug(img0raw,photoParam) - mean
-			imData1aug = photoAug(img1raw,photoParam) - mean
+			imData0aug = img0raw #photoAug(img0raw,photoParam) - mean
+			imData1aug = img1raw #photoAug(img1raw,photoParam) - mean
 
 			# artificial border augmentation
 			borderMask = validPixelMask(tf.stack([1, \

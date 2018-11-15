@@ -23,7 +23,7 @@ def smoothLossMaskCorrection(validMask):
 
 	return maskCor
 
-def smoothLoss(flow,gt,alpha,beta,validPixelMask=None,img0Grad=None,boundaryAlpha=0):
+def smoothLoss(flow,gt,alpha,beta,validPixelMask=None,img0Grad=None,boundaryAlpha=0,verbose=False):
 	"""
 	smoothness loss, includes boundaries if img0Grad != None
 	"""
@@ -51,7 +51,10 @@ def smoothLoss(flow,gt,alpha,beta,validPixelMask=None,img0Grad=None,boundaryAlph
 		flowShape = flow.get_shape()
 		gtMask = tf.nn.conv2d(gt,kernel,[1,1,1,1],padding="SAME")
 		gtMask = 1 - tf.square(gtMask)
-		#tf.summary.image("gtmask", tf.image.grayscale_to_rgb(tf.expand_dims(gtMask[:,:,:,0],-1)))
+		if verbose:
+			tf.summary.image("gtmaskX", tf.image.grayscale_to_rgb(tf.expand_dims(gtMask[:,:,:,0],-1)))
+			tf.summary.image("gtmaskY", tf.image.grayscale_to_rgb(tf.expand_dims(gtMask[:,:,:,1],-1)))
+			tf.summary.image("smooth_flow", flowToRgb(flow))
 		neighborDiffU = tf.nn.conv2d(u,kernel,[1,1,1,1],padding="SAME") * gtMask
 		neighborDiffV = tf.nn.conv2d(v,kernel,[1,1,1,1],padding="SAME") * gtMask
 
@@ -70,3 +73,30 @@ def smoothLoss(flow,gt,alpha,beta,validPixelMask=None,img0Grad=None,boundaryAlph
 			return robustLoss
 		else:
 			return robustLoss*smoothLossMaskCorrection(validPixelMask)
+
+
+import math
+def flowToRgb(flow,zeroFlow="saturation"):
+    with tf.variable_scope(None,default_name="flowToRgb"):
+        mag = tf.sqrt(tf.reduce_sum(flow**2,axis=-1))
+        ang180 = tf.atan2(flow[:,:,:,1],flow[:,:,:,0])
+        ones = tf.ones_like(mag)
+
+        # fix angle so righward motion is red
+        ang = ang180*tf.cast(tf.greater_equal(ang180,0),tf.float32)
+        ang += (ang180+2*math.pi)*tf.cast(tf.less(ang180,0),tf.float32)
+
+        # normalize for hsv
+        largestMag = tf.reduce_max(mag,axis=[1,2])
+        magNorm = mag/largestMag
+        angNorm = ang/(math.pi*2)
+
+        if zeroFlow == "value":
+                hsv = tf.stack([angNorm,ones,magNorm],axis=-1)
+        elif zeroFlow == "saturation":
+                hsv = tf.stack([angNorm,magNorm,ones],axis=-1)
+        else:
+                assert("zeroFlow mode must be {'value','saturation'}")
+        rgb = tf.image.hsv_to_rgb(hsv)
+        return rgb
+

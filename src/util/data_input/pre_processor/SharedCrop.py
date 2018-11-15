@@ -19,15 +19,14 @@ class SharedCrop(DataPreProcessor):
 		ref_shape = tf.shape(ref_data)
 		self.in_h = ref_shape[0]
 		self.in_w = ref_shape[1]
-
 		#create shared offset values
 		with tf.variable_scope(None,default_name="random_crop_pos"):
 			max_h_offset = self.in_h - self.crop_h
 			max_w_offset = self.in_w - self.crop_w
 
 			# generate crop, unifrom
-			rand_h = tf.random_uniform([],0,max_h_offset,dtype=tf.int32)
-			rand_w = tf.random_uniform([],0,max_w_offset,dtype=tf.int32)
+			rand_h = 0 #tf.cond(tf.equal(0, max_h_offset), lambda: 0, lambda: tf.random_uniform([],0,max_h_offset,dtype=tf.int32))
+			rand_w = 0 #tf.cond(tf.equal(0, max_w_offset), lambda: 0, lambda: tf.random_uniform([],0,max_w_offset,dtype=tf.int32))
 
 		# expose tensors
 		self.rand_h = rand_h
@@ -41,9 +40,8 @@ class SharedCrop(DataPreProcessor):
 			dataShape = tf.shape(dataIn)
 			inH = dataShape[0]
 			inW = dataShape[1]
-
-			tf.assert_equal(inH,self.in_h,message="data height not equal to reference data height")
-			tf.assert_equal(inW,self.in_w,message="data width not equal to reference data width")
+			# tf.assert_equal(inH,self.in_h,message="data height not equal to reference data height")
+			# tf.assert_equal(inW,self.in_w,message="data width not equal to reference data width")
 
 			out = tf.slice(dataIn,[self.rand_h,self.rand_w,0],[self.crop_h,self.crop_w,-1])
 

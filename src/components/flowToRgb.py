@@ -12,7 +12,7 @@ def flowToRgb(flow,zeroFlow="value"):
 		ang += (ang180+2*math.pi)*tf.cast(tf.less(ang180,0),tf.float32)
 
 		# normalize for hsv
-		largestMag = tf.reduce_max(mag,axis=[1,2])
+		largestMag = tf.reduce_max(mag,axis=[0,1])
 		magNorm = mag/largestMag
 		angNorm = ang/(math.pi*2)
 

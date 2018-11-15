@@ -30,11 +30,15 @@ def unsupFlowLoss(flow,flowB,frame0,frame1,validPixelMask,instanceParams):
 		rgb1 = frame1["rgbNorm"]
 		grad0 = frame0["grad"]
 		grad1 = frame1["grad"]
-
+		gt0 = frame0["gt"]
+		tf.summary.image("rgb0", frame0["rgb"])
+		tf.summary.image("rgb1", frame1["rgb"])
+		tf.summary.image("gt0", gt0)
 		# masking from simple occlusion/border
 		occMask = borderOcclusionMask(flow) # occ if goes off image
 		occInvalidMask = validPixelMask*occMask # occluded and invalid
-
+		# tf.summary.image("occlusionMask", occMask)
+		# tf.summary.image("occInvalidMask", occInvalidMask)
 		# loss components
 		photo = photoLoss(flow,rgb0,rgb1,photoAlpha,photoBeta)
 		grad = gradLoss(flow,grad0,grad1,gradAlpha,gradBeta)
@@ -43,7 +47,7 @@ def unsupFlowLoss(flow,flowB,frame0,frame1,validPixelMask,instanceParams):
 			imgGrad = grad0
 
 		if lossComponents["asymmetricSmooth"]:
-			smoothMasked = asymmetricSmoothLoss(flow,instanceParams,occMask,validPixelMask,imgGrad,boundaryAlpha)
+			smoothMasked = asymmetricSmoothLoss(flow,gt0,instanceParams,occMask,validPixelMask,imgGrad,boundaryAlpha)
 		else:
 			smoothMasked = smoothLoss(flow,smoothAlpha,smoothBeta,validPixelMask,imgGrad,boundaryAlpha)
 		smooth2ndMasked = smoothLoss2nd(flow,smooth2ndAlpha,smooth2ndBeta,validPixelMask,imgGrad,boundaryAlpha)

@@ -12,9 +12,9 @@
     "robustness": 0.53
   },
   "baseLR": 1e-05,
-  "borderThicknessH": 0.1,
+  "borderThicknessH": 0.01,
   "iterations": 500000,
-  "borderThicknessW": 0.1,
+  "borderThicknessW": 0.01,
   "snapFreq": 5000,
   "batchSize": 2,
   "smoothOccParams": {

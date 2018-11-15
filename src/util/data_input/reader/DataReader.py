@@ -25,4 +25,5 @@ class DataReader(object):
 
 	def get_feed_dict(self,index):
 		path = 	self.dataset_root + self.data_list_path[index]
+		# print path
 		return {self.data_path: path}

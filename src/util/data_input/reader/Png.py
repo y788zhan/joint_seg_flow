@@ -1,5 +1,5 @@
 from DataReader import *
-
+import sys
 class Png(DataReader):
 	"""
 	Manages the fetching of single peices of data on the cpu onto the gpu
@@ -10,6 +10,7 @@ class Png(DataReader):
 
 			# graph setup
 			img_path = tf.placeholder(dtype=tf.string)
+			print >> sys.stderr, "Reading {}".format(img_path)
 			img = tf.image.decode_png(tf.read_file(img_path), channels=channels, dtype=dtype)
 
 			# expose tensors

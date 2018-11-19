@@ -35,12 +35,12 @@
     "robustness": 0.21,
     "weight": 0.53
   },
-  "snapshotFreq": 10000,
+  "snapshotFreq": 20000,
   "smoothParams": {
     "scale": 3.5,
     "robustness": 0.99,
-    "weight": 20
+    "weight": 3
   },
   "boundaryAlpha": 6.5,
-  "printFreq": 100
+  "printFreq": 1000
 }

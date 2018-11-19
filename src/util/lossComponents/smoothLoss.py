@@ -52,8 +52,6 @@ def smoothLoss(flow,gt,alpha,beta,validPixelMask=None,img0Grad=None,boundaryAlph
 		gtMask = tf.nn.conv2d(gt,kernel,[1,1,1,1],padding="SAME")
 		gtMask = 1 - tf.square(gtMask)
 		if verbose:
-			tf.summary.image("gtmaskX", tf.image.grayscale_to_rgb(tf.expand_dims(gtMask[:,:,:,0],-1)))
-			tf.summary.image("gtmaskY", tf.image.grayscale_to_rgb(tf.expand_dims(gtMask[:,:,:,1],-1)))
 			tf.summary.image("smooth_flow", flowToRgb(flow))
 		neighborDiffU = tf.nn.conv2d(u,kernel,[1,1,1,1],padding="SAME") * gtMask
 		neighborDiffV = tf.nn.conv2d(v,kernel,[1,1,1,1],padding="SAME") * gtMask
@@ -88,7 +86,7 @@ def flowToRgb(flow,zeroFlow="saturation"):
 
         # normalize for hsv
         largestMag = tf.reduce_max(mag,axis=[1,2])
-        magNorm = mag/largestMag
+	magNorm = tf.stack([mag[0,:,:] / largestMag[0], mag[1,:,:] / largestMag[1]], axis=0)
         angNorm = ang/(math.pi*2)
 
         if zeroFlow == "value":

@@ -30,7 +30,7 @@ def unsupFlowLoss(flow,flowB,frame0,frame1,validPixelMask,instanceParams, backwa
 		rgb1 = frame1["rgbNorm"]
 		grad0 = frame0["grad"]
 		grad1 = frame1["grad"]
-		gt = frame1["gt"]
+		gt = frame0["gt"]
 		if not backward:
 			tf.summary.image("rgb0", frame0["rgb"])
 			tf.summary.image("rgb1", frame1["rgb"])

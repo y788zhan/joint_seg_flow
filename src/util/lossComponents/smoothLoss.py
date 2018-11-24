@@ -16,9 +16,9 @@ def make_kernel(width, horizontal=True):
 def make_kernels(width):
 	return tf.transpose(
 		tf.constant(
-			[make_kernel(width, True), make_kernel(width, False)],
+			[[make_kernel(width, True)], [make_kernel(width, False)]],
 			dtype=tf.float32),
-		perm=[3,2,1,])
+		perm=[3,2,1,0])
 
 def make_mask(kernel_width, height, width, horizontal = True):
 	mask = np.ones((height, width))
@@ -81,17 +81,16 @@ def smoothLoss(flow,gt,alpha,beta,validPixelMask=None,img0Grad=None,boundaryAlph
 			y_mask = Y_MASKS[i]
 			gtMask = tf.nn.conv2d(gt,kernel,[1,1,1,1],padding="SAME")
 			gtMask = 1 - tf.square(gtMask)
-			gtMask = tf.stack([gtMask[:,:,:,0] * x_mask, gtMask[:,:,:,1] * y_mask])
-
+			gtMask = tf.stack([gtMask[:,:,:,0] * x_mask, gtMask[:,:,:,1] * y_mask], axis=-1)
 			neighborDiffU = tf.nn.conv2d(u,kernel,[1,1,1,1],padding="SAME") * gtMask
 			neighborDiffV = tf.nn.conv2d(v,kernel,[1,1,1,1],padding="SAME") * gtMask
 
 			diffs = tf.concat([neighborDiffU,neighborDiffV],3)
 			dists = tf.reduce_sum(tf.abs(diffs),axis=3,keep_dims=True)
-			if not robustLoss:
+			if robustLoss is None:
 				robustLoss = charbonnierLoss(dists,alpha,beta,0.001)
 			else:
-				robustLoss += charbonnierLoss(dists,alpha,beta,0.001)
+				robustLoss += charbonnierLoss(dists,alpha * (1 - 0.8 * i / (MAX_WIDTH - 1)), beta,0.001)
 
 		# if not img0Grad == None:
 		# 	dMag = tf.sqrt(tf.reduce_sum(img0Grad**2, axis=3, keep_dims=True))
@@ -101,6 +100,8 @@ def smoothLoss(flow,gt,alpha,beta,validPixelMask=None,img0Grad=None,boundaryAlph
 			# debug
 			# tf.summary.image("boundaryMask", mask)
 
+		return robustLoss
+		
 		if validPixelMask is None:
 			return robustLoss
 		else:
@@ -120,7 +121,7 @@ def flowToRgb(flow,zeroFlow="saturation"):
 
 		# normalize for hsv
 		largestMag = tf.reduce_max(mag,axis=[1,2])
-	magNorm = tf.stack([mag[0,:,:] / largestMag[0], mag[1,:,:] / largestMag[1]], axis=0)
+		magNorm = tf.stack([mag[0,:,:] / largestMag[0], mag[1,:,:] / largestMag[1]], axis=0)
 		angNorm = ang/(math.pi*2)
 
 		if zeroFlow == "value":

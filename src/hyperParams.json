@@ -12,9 +12,9 @@
     "robustness": 0.53
   },
   "baseLR": 1e-05,
-  "borderThicknessH": 0.01,
+  "borderThicknessH": 0.02,
   "iterations": 500000,
-  "borderThicknessW": 0.01,
+  "borderThicknessW": 0.02,
   "snapFreq": 5000,
   "batchSize": 2,
   "smoothOccParams": {
@@ -39,7 +39,7 @@
   "smoothParams": {
     "scale": 3.5,
     "robustness": 0.99,
-    "weight": 3
+    "weight": 0.25
   },
   "boundaryAlpha": 6.5,
   "printFreq": 1000

@@ -13,6 +13,7 @@ def flowToRgb(flow,zeroFlow="saturation"):
 
 		# normalize for hsv
 		largestMag = tf.reduce_max(mag,axis=[1,2])
+		#import pdb; pdb.set_trace()
 		#magNorm = tf.stack([mag[0,:,:] / largestMag[0], mag[1,:,:] / largestMag[1]], axis=0)
 		magNorm = mag / largestMag
 		angNorm = ang/(math.pi*2)

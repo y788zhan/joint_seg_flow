@@ -65,7 +65,6 @@ def unsupFlowLoss(flow,flowB,frame0,frame1,validPixelMask,instanceParams, backwa
 
 		# weight loss terms
 		# gradAvg = gradAvg*gradReg
-		smoothAvg = smoothAvg*smoothReg
 		# smooth2ndAvg = smooth2ndAvg*smooth2ndReg
 
 		# summaries ----------------------------
@@ -74,6 +73,7 @@ def unsupFlowLoss(flow,flowB,frame0,frame1,validPixelMask,instanceParams, backwa
 		tf.summary.scalar(photoLossName,tf.reduce_mean(photoAvg))
 		tf.summary.scalar(smoothLossName,tf.reduce_mean(smoothAvg))
 
+		smoothAvg = smoothAvg*smoothReg
 		# final loss
 		# finalLoss = photoAvg + smoothAvg
 		return photoAvg, smoothAvg

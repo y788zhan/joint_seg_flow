@@ -32,7 +32,7 @@ def make_mask(kernel_width, height, width, horizontal = True):
 	return tf.stack([mask, mask]) # batch_size = 2
 
 
-MAX_WIDTH = 40
+MAX_WIDTH = 25
 # KERNELS = [make_kernels(i) for i in xrange(1, MAX_WIDTH + 1)]
 X_MASKS = [make_mask(i, 480, 854, True) for i in xrange(1, MAX_WIDTH + 1)]
 Y_MASKS = [make_mask(i, 480, 854, False) for i in xrange(1, MAX_WIDTH + 1)]
@@ -95,14 +95,11 @@ def smoothLoss(flow,gt,alpha,beta,validPixelMask=None,img0Grad=None,boundaryAlph
 		for i in xrange(MAX_WIDTH):
 			x_mask = X_MASKS[i]
 			y_mask = Y_MASKS[i]
-			# gtMask = tf.nn.conv2d(gt,kernel,[1,1,1,1],padding="SAME",dilations=[1, 1, 1, 1])
 			gtMask = tf.nn.atrous_conv2d(gt, kernel, rate=i+1, padding="SAME")
 			gtMask = 1 - tf.square(gtMask)
 			gtMask = tf.stack([gtMask[:,:,:,0] * x_mask, gtMask[:,:,:,1] * y_mask], axis=-1)
 			neighborDiffU = tf.nn.atrous_conv2d(u, kernel, rate=i+1, padding="SAME") * gtMask
 			neighborDiffV = tf.nn.atrous_conv2d(v, kernel, rate=i+1, padding="SAME") * gtMask
-			# neighborDiffU = tf.nn.conv2d(u,kernel,[1,1,1,1],padding="SAME",dilations=[1, 1, 1, 1]) * gtMask
-			# neighborDiffV = tf.nn.conv2d(v,kernel,[1,1,1,1],padding="SAME",dilations=[1, 1, 1, 1]) * gtMask
 
 			diffs = tf.concat([neighborDiffU,neighborDiffV],3)
 			dists = tf.reduce_sum(tf.abs(diffs),axis=3,keep_dims=True)

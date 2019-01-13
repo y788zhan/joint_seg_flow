@@ -25,10 +25,10 @@ class TrainingData:
 			# else:
 			# 	assert False, "unknown dataset: " + instanceParams["dataset"]
 			datasetRoot = '../example_data/'
-			frame0Path = datasetRoot + 'datalists/train_im0.txt'
-			frame1Path = datasetRoot + 'datalists/train_im1.txt'
-			gt0Path = datasetRoot + 'datalists/train_gt0.txt'
-			gt1Path = datasetRoot + 'datalists/train_gt1.txt'
+			frame0Path = datasetRoot + 'datalists/hockey_im0.txt'
+			frame1Path = datasetRoot + 'datalists/hockey_im1.txt'
+			gt0Path = datasetRoot + 'datalists/hockey_gt0.txt'
+			gt1Path = datasetRoot + 'datalists/hockey_gt1.txt'
 			desiredHeight = 480
 			desiredWidth = 854
 

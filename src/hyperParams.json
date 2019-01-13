@@ -3,7 +3,7 @@
     "gradient": false,
     "boundaries": false,
     "smooth2nd": false,
-    "backward": true,
+    "backward": false,
     "asymmetricSmooth": true
   },
   "weightDecay": 0.0,
@@ -39,7 +39,7 @@
   "smoothParams": {
     "scale": 3.5,
     "robustness": 0.99,
-    "weight": 0.0025
+    "weight": 0.002
   },
   "boundaryAlpha": 6.5,
   "printFreq": 1000

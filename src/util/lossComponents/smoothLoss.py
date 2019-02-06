@@ -29,6 +29,7 @@ def make_mask(kernel_width, height, width, horizontal = True):
 		for i in xrange(kernel_width):
 			mask[height - i - 1,:] = 0
 	mask = tf.cast(mask, tf.float32)
+	#return tf.expand_dims(mask, 0)
 	return tf.stack([mask, mask]) # batch_size = 2
 
 
@@ -97,17 +98,17 @@ def smoothLoss(flow,gt,alpha,beta,validPixelMask=None,img0Grad=None,boundaryAlph
 			y_mask = Y_MASKS[i]
 			gtMask = tf.nn.atrous_conv2d(gt, kernel, rate=i+1, padding="SAME")
 			gtMask = 1 - tf.square(gtMask)
-			gtMask = tf.stack([gtMask[:,:,:,0] * x_mask, gtMask[:,:,:,1] * y_mask], axis=-1)
+			gtMask = tf.stack([gtMask[:,:,:,0] * y_mask, gtMask[:,:,:,1] * x_mask], axis=-1)
 			neighborDiffU = tf.nn.atrous_conv2d(u, kernel, rate=i+1, padding="SAME") * gtMask
 			neighborDiffV = tf.nn.atrous_conv2d(v, kernel, rate=i+1, padding="SAME") * gtMask
-
-			diffs = tf.concat([neighborDiffU,neighborDiffV],3)
-			dists = tf.reduce_sum(tf.abs(diffs),axis=3,keep_dims=True)
+			#diffs = tf.concat([neighborDiffU,neighborDiffV],3)
+			#dists = tf.reduce_sum(tf.abs(diffs),axis=3,keep_dims=True)
+			diffs = tf.abs(tf.concat([neighborDiffU, neighborDiffV], 3))
+			dists = charbonnierLoss(diffs, alpha, beta, 0.001)
 			if robustLoss is None:
-				robustLoss = charbonnierLoss(dists,alpha,beta,0.001)
+				robustLoss = tf.reduce_sum(dists, axis=3, keep_dims=True)
 			else:
-				# robustLoss += charbonnierLoss(dists,alpha * (1 - 0.8 * i / (MAX_WIDTH - 1)), beta,0.001)
-				robustLoss += charbonnierLoss(dists, alpha, beta, 0.001)
+				robustLoss += tf.reduce_sum(dists, axis=3, keep_dims=True)
 		# if not img0Grad == None:
 		# 	dMag = tf.sqrt(tf.reduce_sum(img0Grad**2, axis=3, keep_dims=True))
 		# 	mask = tf.exp(-boundaryAlpha*dMag)

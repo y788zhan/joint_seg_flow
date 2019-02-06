@@ -17,7 +17,6 @@ class DataReader(object):
 			self.data_list_path = [x[:-1] for x in f.readlines()]
 
 		self.n_data = len(self.data_list_path)
-
 		# defaults that are expected
 		self.data_out = None
 		self.data_type = None

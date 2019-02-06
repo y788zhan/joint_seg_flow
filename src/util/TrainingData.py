@@ -25,10 +25,10 @@ class TrainingData:
 			# else:
 			# 	assert False, "unknown dataset: " + instanceParams["dataset"]
 			datasetRoot = '../example_data/'
-			frame0Path = datasetRoot + 'datalists/hockey_im0.txt'
-			frame1Path = datasetRoot + 'datalists/hockey_im1.txt'
-			gt0Path = datasetRoot + 'datalists/hockey_gt0.txt'
-			gt1Path = datasetRoot + 'datalists/hockey_gt1.txt'
+			frame0Path = datasetRoot + 'datalists/swing_11_im0.txt'
+			frame1Path = datasetRoot + 'datalists/swing_11_im1.txt'
+			gt0Path = datasetRoot + 'datalists/swing_11_gt0.txt'
+			gt1Path = datasetRoot + 'datalists/swing_11_gt1.txt'
 			desiredHeight = 480
 			desiredWidth = 854
 
@@ -83,7 +83,6 @@ class TrainingData:
 			imData1Grad = gradientFromGray(imData1Gray)
 
 			# ----------expose tensors-----------
-
 			self.frame0 = {
 				"rgb": imData0aug,
 				"rgbNorm": lrn0,

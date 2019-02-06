@@ -26,12 +26,6 @@ def asymmetricSmoothLoss(flow,gt,instanceParams,occMask,validPixelMask,img0Grad=
 		nonOccSmooth = smoothLoss(flow, gt, alpha,beta,occMask,img0Grad,boundaryAlpha, verbose=not backward)
 		return nonOccSmooth
 
-		# final
-		valid = smoothLossMaskCorrection(validPixelMask)
-		smooth = nonOccSmooth #+ occSmooth
-		return smooth*valid
-
-
 import math
 def vis_flow(flow,zeroFlow="saturation"):
     with tf.variable_scope(None,default_name="flowToRgb"):

@@ -29,11 +29,11 @@ def make_mask(kernel_width, height, width, horizontal = True):
 		for i in xrange(kernel_width):
 			mask[height - i - 1,:] = 0
 	mask = tf.cast(mask, tf.float32)
-	#return tf.expand_dims(mask, 0)
-	return tf.stack([mask, mask]) # batch_size = 2
+	return tf.expand_dims(mask, 0)
+	#return tf.stack([mask, mask]) # batch_size = 2
 
 
-MAX_WIDTH = 25
+MAX_WIDTH = 1
 # KERNELS = [make_kernels(i) for i in xrange(1, MAX_WIDTH + 1)]
 X_MASKS = [make_mask(i, 480, 854, True) for i in xrange(1, MAX_WIDTH + 1)]
 Y_MASKS = [make_mask(i, 480, 854, False) for i in xrange(1, MAX_WIDTH + 1)]
@@ -105,6 +105,7 @@ def smoothLoss(flow,gt,alpha,beta,validPixelMask=None,img0Grad=None,boundaryAlph
 			#dists = tf.reduce_sum(tf.abs(diffs),axis=3,keep_dims=True)
 			diffs = tf.abs(tf.concat([neighborDiffU, neighborDiffV], 3))
 			dists = charbonnierLoss(diffs, alpha, beta, 0.001)
+			
 			if robustLoss is None:
 				robustLoss = tf.reduce_sum(dists, axis=3, keep_dims=True)
 			else:

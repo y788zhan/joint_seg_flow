@@ -71,9 +71,8 @@ def make_gt_masks(gt_mask, w):
         multiplier_masks.append([])
 
     for i in range(w):
+	import pdb; pdb.set_trace()
         j = i + 1
-        gt_mask = GT_MASKS[i]
-
         multiplier_masks[i].append(
             tf.tile(
                 tf.expand_dims(
@@ -103,6 +102,7 @@ def make_gt_masks(gt_mask, w):
     # Remove 0's in normalizer
     normalizer += 4 * w * tf.cast(tf.equal(normalizer, 0), dtype=tf.float32)
 
+    import pdb; pdb.set_trace()
     return multiplier_masks, normalizer
 
 
@@ -167,7 +167,7 @@ def smoothLoss(flow, gtMask, alpha, beta):
         dists = tf.reduce_sum(tf.abs(diffs),axis=3,keep_dims=True)
         robustLoss = charbonnierLoss(dists,alpha,beta,0.001)
 
-        robustLoss = tf.reduce_mean(smoothMasked,reduction_indices=[1,2])
+        robustLoss = tf.reduce_mean(robustLoss,reduction_indices=[1,2])
         return robustLoss
 
 
@@ -206,16 +206,16 @@ def clampLoss(flow,gt,alpha,beta,validPixelMask=None,img0Grad=None,boundaryAlpha
 			gtMask = 1 - tf.square(gtMask)
 			gtMask = tf.stack([gtMask[:,:,:,0] * y_mask, gtMask[:,:,:,1] * x_mask], axis=-1)
 
-            flow_smoothness = smoothLoss(flow, gtMask, alpha, beta)
-            tf.summary.scalar("Network Outut Smoothness", tf.reduce_mean(flow_smoothness))
+            		flow_smoothness = smoothLoss(flow, gtMask, alpha, beta)
+            		tf.summary.scalar("Network Outut Smoothness", tf.reduce_mean(flow_smoothness))
 
-            multiplier_masks, normalizer = make_gt_masks(gtMask, MAX_WIDTH)
-            flow_hat = fixed_point_update(flow, GOL, 10, multiplier_masks, normalizer)
+            		multiplier_masks, normalizer = make_gt_masks(gtMask, MAX_WIDTH)
+            		flow_hat = fixed_point_update(flow, GOL, 10, multiplier_masks, normalizer)
 
-            fhat_smoothness = smoothLoss(flow_hat, gtMask, alpha, beta)
-            tf.summary.scalar("fhat Smoothness", tf.reduce_mean(fhat_smoothness))
+            		fhat_smoothness = smoothLoss(flow_hat, gtMask, alpha, beta)
+            		tf.summary.scalar("fhat Smoothness", tf.reduce_mean(fhat_smoothness))
 
-            diffs = flow - flow_hat
+            		diffs = flow - flow_hat
 
 			dists = charbonnierLoss(diffs, alpha, beta, 0.001)
 			

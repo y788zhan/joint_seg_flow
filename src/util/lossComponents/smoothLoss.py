@@ -74,28 +74,16 @@ def make_gt_masks(gt_mask, w):
 	import pdb; pdb.set_trace()
         j = i + 1
         multiplier_masks[i].append(
-            tf.tile(
-                tf.expand_dims(
-                    tf.concat([gt_mask[:,:,j:854,0],
-                               tf.zeros((2, 480, j), dtype=tf.float32)], axis=2), axis=-1), (1, 1, 1, 2)))
+            tf.concat([gt_mask[:,:,j:854,0], tf.zeros((2, 480, j, 2), dtype=tf.float32)], axis=2))
 
         multiplier_masks[i].append(
-            tf.tile(
-                tf.expand_dims(
-                    tf.concat([tf.zeros((2, j, 854), dtype=tf.float32),
-                               gt_mask[:,0:(480-j),:,1]], axis=1), axis=-1), (1, 1, 1, 2)))
+            tf.concat([tf.zeros((2, j, 854, 2), dtype=tf.float32), gt_mask[:,0:(480-j),:,1]], axis=1))
 
         multiplier_masks[i].append(
-            tf.tile(
-                tf.expand_dims(
-                    tf.concat([tf.zeros((2, 480, j), dtype=tf.float32),
-                               gt_mask[:,:,0:(854-j),2]], axis=2), axis=-1), (1, 1, 1, 2)))
+            tf.concat([tf.zeros((2, 480, j, 2), dtype=tf.float32), gt_mask[:,:,0:(854-j),2]], axis=2))
 
         multiplier_masks[i].append(
-            tf.tile(
-                tf.expand_dims(
-                    tf.concat([gt_mask[:,j:480,:,3],
-                               tf.zeros((2, j, 854), dtype=tf.float32)], axis=1), axis=-1), (1, 1, 1, 2)))
+            tf.concat([gt_mask[:,j:480,:,3], tf.zeros((2, j, 854, 2), dtype=tf.float32)], axis=1))
 
         normalizer += multiplier_masks[i][0] + multiplier_masks[i][1] + multiplier_masks[i][2] + multiplier_masks[i][3]
 

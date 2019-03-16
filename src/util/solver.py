@@ -8,8 +8,6 @@ momentum2 = 0.999
 def attachSolver(loss):
 	with tf.variable_scope(None,default_name="solver"):
 		learningRate = tf.placeholder(tf.float32,shape=[])
-		#solver = tf.train.AdamOptimizer(learning_rate=learningRate , beta1=momentum1, beta2=momentum2)
-		solver = tf.train.GradientDescentOptimizer(learning_rate=learningRate)
-		#solver = tf.train.MomentumOptimizer(learning_rate=learningRate, momentum=0.9)
-                solver_op = solver.minimize(loss)
+		solver = tf.train.AdamOptimizer(learning_rate=learningRate , beta1=momentum1, beta2=momentum2)
+        solver_op = solver.minimize(loss)
 		return [solver, solver_op, learningRate]

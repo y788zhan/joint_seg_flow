@@ -50,9 +50,9 @@ class TrainingData:
 			## queuing complete
 
 			# mean subtraction
-			mean = [[[[0.407871, 0.457525, 0.481094]]]]
-			img0raw = tf.cast(batch[0],tf.float32)/255.0 - mean
-			img1raw = tf.cast(batch[1],tf.float32)/255.0 - mean
+			# mean = [[[[0.407871, 0.457525, 0.481094]]]]
+			img0raw = tf.cast(batch[0],tf.float32) / 255.0 #- mean
+			img1raw = tf.cast(batch[1],tf.float32) / 255.0 #- mean
 			gt0raw = tf.cast(batch[2], tf.float32)
 			gt1raw = tf.cast(batch[3], tf.float32)
 			## async section done ##

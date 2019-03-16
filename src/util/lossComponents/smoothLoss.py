@@ -29,8 +29,8 @@ def make_mask(kernel_width, height, width, horizontal = True):
 		for i in xrange(kernel_width):
 			mask[height - i - 1,:] = 0
 	mask = tf.cast(mask, tf.float32)
-	return tf.expand_dims(mask, 0)
-	#return tf.stack([mask, mask]) # batch_size = 2
+	# return tf.expand_dims(mask, 0)
+	return tf.stack([mask, mask]) # batch_size = 2
 
 
 MAX_WIDTH = 1
@@ -63,8 +63,116 @@ def smoothLossMaskCorrection(validMask):
 
 
 
+def make_gt_masks(gt_mask, w):
+    normalizer = tf.zeros((2, 480, 854, 2)) # batch size 2
 
-def smoothLoss(flow,gt,alpha,beta,validPixelMask=None,img0Grad=None,boundaryAlpha=0,verbose=False):
+    multiplier_masks = []
+    for i in range(w):
+        multiplier_masks.append([])
+
+    for i in range(w):
+        j = i + 1
+        gt_mask = GT_MASKS[i]
+
+        multiplier_masks[i].append(
+            tf.tile(
+                tf.expand_dims(
+                    tf.concat([gt_mask[:,:,j:854,0],
+                               tf.zeros((2, 480, j), dtype=tf.float32)], axis=2), axis=-1), (1, 1, 1, 2)))
+
+        multiplier_masks[i].append(
+            tf.tile(
+                tf.expand_dims(
+                    tf.concat([tf.zeros((2, j, 854), dtype=tf.float32),
+                               gt_mask[:,0:(480-j),:,1]], axis=1), axis=-1), (1, 1, 1, 2)))
+
+        multiplier_masks[i].append(
+            tf.tile(
+                tf.expand_dims(
+                    tf.concat([tf.zeros((2, 480, j), dtype=tf.float32),
+                               gt_mask[:,:,0:(854-j),2]], axis=2), axis=-1), (1, 1, 1, 2)))
+
+        multiplier_masks[i].append(
+            tf.tile(
+                tf.expand_dims(
+                    tf.concat([gt_mask[:,j:480,:,3],
+                               tf.zeros((2, j, 854), dtype=tf.float32)], axis=1), axis=-1), (1, 1, 1, 2)))
+
+        normalizer += multiplier_masks[i][0] + multiplier_masks[i][1] + multiplier_masks[i][2] + multiplier_masks[i][3]
+
+    # Remove 0's in normalizer
+    normalizer += 4 * w * tf.cast(tf.equal(normalizer, 0), dtype=tf.float32)
+
+    return multiplier_masks, normalizer
+
+
+def fixed_point_update(flow, gamma, itr, multiplier_masks, normalizer):
+    flow_copy1 = flow * 1.0
+    flow_copy2 = flow * 1.0
+    flow_copy1 = tf.stop_gradient(flow_copy1)
+    flow_copy2 = tf.stop_gradient(flow_copy2)
+
+    for k in range(itr):
+        temp = tf.zeros_like(flow)
+        for i in range(w):
+            j = i + 1
+            temp += tf.concat([flow_copy1[:,:,j:854,:],
+                               tf.zeros((1, 480, j, 2), dtype=tf.float32)], axis=2) * multiplier_masks[i][0]
+
+            temp += tf.concat([tf.zeros((1, j, 854, 2), dtype=tf.float32),
+                               flow_copy1[:,0:(480-j),:,:]], axis=1) * multiplier_masks[i][1]
+
+            temp += tf.concat([tf.zeros((1, 480, j, 2), dtype=tf.float32),
+                               flow_copy1[:,:,0:(854-j),:]], axis=2) * multiplier_masks[i][2]
+
+            temp += tf.concat([flow_copy1[:,j:480,:,:],
+                               tf.zeros((1, j, 854, 2), dtype=tf.float32)], axis=1) * multiplier_masks[i][3]
+
+        temp += gamma * flow_copy2
+        flow_copy1 = temp / (normalizer + gamma)
+    return flow_copy1
+
+GOL = 4
+
+
+def smoothLoss(flow, gtMask, alpha, beta):
+    kernel = tf.transpose(tf.constant([\
+        [ \
+            [ \
+                [0,0,0],\
+                [0,1,-1],\
+                [0,0,0]\
+            ] \
+        ], \
+        [ \
+            [ \
+                [0,0,0],\
+                [0,1,0],\
+                [0,-1,0]\
+            ] \
+        ] \
+    ],dtype=tf.float32),perm=[3,2,1,0])
+
+    with tf.variable_scope(None,default_name="smoothLoss"):
+        u = tf.slice(flow,[0,0,0,0],[-1,-1,-1,1])
+        v = tf.slice(flow,[0,0,0,1],[-1,-1,-1,-1])
+
+        flowShape = flow.get_shape()
+
+        #tf.summary.image("downMask", gtMask[:,:,:,0])
+        neighborDiffU = tf.nn.conv2d(u,kernel,[1,1,1,1],padding="SAME") * gtMask
+        neighborDiffV = tf.nn.conv2d(v,kernel,[1,1,1,1],padding="SAME") * gtMask
+
+        diffs = tf.concat([neighborDiffU,neighborDiffV],3)
+        dists = tf.reduce_sum(tf.abs(diffs),axis=3,keep_dims=True)
+        robustLoss = charbonnierLoss(dists,alpha,beta,0.001)
+
+        robustLoss = tf.reduce_mean(smoothMasked,reduction_indices=[1,2])
+        return robustLoss
+
+
+
+def clampLoss(flow,gt,alpha,beta,validPixelMask=None,img0Grad=None,boundaryAlpha=0,verbose=False):
 	"""
 	smoothness loss, includes boundaries if img0Grad != None
 	"""
@@ -86,8 +194,6 @@ def smoothLoss(flow,gt,alpha,beta,validPixelMask=None,img0Grad=None,boundaryAlph
 	],dtype=tf.float32),perm=[3,2,1,0])
 
 	with tf.variable_scope(None,default_name="smoothLoss"):
-		u = tf.slice(flow,[0,0,0,0],[-1,-1,-1,1])
-		v = tf.slice(flow,[0,0,0,1],[-1,-1,-1,-1])
 		robustLoss = None
 
 		flowShape = flow.get_shape()
@@ -99,24 +205,25 @@ def smoothLoss(flow,gt,alpha,beta,validPixelMask=None,img0Grad=None,boundaryAlph
 			gtMask = tf.nn.atrous_conv2d(gt, kernel, rate=i+1, padding="SAME")
 			gtMask = 1 - tf.square(gtMask)
 			gtMask = tf.stack([gtMask[:,:,:,0] * y_mask, gtMask[:,:,:,1] * x_mask], axis=-1)
-			neighborDiffU = tf.nn.atrous_conv2d(u, kernel, rate=i+1, padding="SAME") * gtMask
-			neighborDiffV = tf.nn.atrous_conv2d(v, kernel, rate=i+1, padding="SAME") * gtMask
-			#diffs = tf.concat([neighborDiffU,neighborDiffV],3)
-			#dists = tf.reduce_sum(tf.abs(diffs),axis=3,keep_dims=True)
-			diffs = tf.abs(tf.concat([neighborDiffU, neighborDiffV], 3))
+
+            flow_smoothness = smoothLoss(flow, gtMask, alpha, beta)
+            tf.summary.scalar("Network Outut Smoothness", tf.reduce_mean(flow_smoothness))
+
+            multiplier_masks, normalizer = make_gt_masks(gtMask, MAX_WIDTH)
+            flow_hat = fixed_point_update(flow, GOL, 10, multiplier_masks, normalizer)
+
+            fhat_smoothness = smoothLoss(flow_hat, gtMask, alpha, beta)
+            tf.summary.scalar("fhat Smoothness", tf.reduce_mean(fhat_smoothness))
+
+            diffs = flow - flow_hat
+
 			dists = charbonnierLoss(diffs, alpha, beta, 0.001)
 			
 			if robustLoss is None:
 				robustLoss = tf.reduce_sum(dists, axis=3, keep_dims=True)
 			else:
 				robustLoss += tf.reduce_sum(dists, axis=3, keep_dims=True)
-		# if not img0Grad == None:
-		# 	dMag = tf.sqrt(tf.reduce_sum(img0Grad**2, axis=3, keep_dims=True))
-		# 	mask = tf.exp(-boundaryAlpha*dMag)
-		# 	robustLoss *= mask
 
-			# debug
-			# tf.summary.image("boundaryMask", mask)
 		return robustLoss
 		
 		if validPixelMask is None:

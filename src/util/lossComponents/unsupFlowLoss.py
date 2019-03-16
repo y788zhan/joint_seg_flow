@@ -71,16 +71,9 @@ def unsupFlowLoss(flow,flowB,frame0,frame1,validPixelMask,instanceParams, backwa
 		photoLossName = "photoLossB" if backward else "photoLossF"
 		smoothLossName = "smoothLossB" if backward else "smoothLossF"
 		tf.summary.scalar(photoLossName,tf.reduce_mean(photoAvg))
-		tf.summary.scalar(smoothLossName,tf.reduce_mean(smoothAvg))
+		# tf.summary.scalar(smoothLossName,tf.reduce_mean(smoothAvg))
 
 		smoothAvg = smoothAvg*smoothReg
 		# final loss
 		# finalLoss = photoAvg + smoothAvg
 		return photoAvg, smoothAvg
-		# if lossComponents["smooth2nd"]:
-			# tf.summary.scalar("smooth2ndLoss",tf.reduce_mean(smooth2ndAvg))
-			# finalLoss += smooth2ndAvg
-		# if lossComponents["gradient"]:
-			# tf.summary.scalar("gradLoss",tf.reduce_mean(gradAvg))
-			# finalLoss += gradAvg
-		return finalLoss

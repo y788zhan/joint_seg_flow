@@ -8,7 +8,7 @@
   },
   "weightDecay": 0.0,
   "photoParams": {
-    "scale": 1.0,
+    "scale": 255.0,
     "robustness": 1.0
   },
   "baseLR": 1e-05,
@@ -39,7 +39,7 @@
   "smoothParams": {
     "scale": 1.0,
     "robustness": 1.0,
-    "weight": 0.64
+    "weight": 4000
   },
   "boundaryAlpha": 6.5,
   "printFreq": 1000

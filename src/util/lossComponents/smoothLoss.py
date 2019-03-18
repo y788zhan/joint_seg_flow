@@ -112,7 +112,6 @@ def make_gt_masks(gt_mask, w):
     # Remove 0's in normalizer
     normalizer += 4 * w * tf.cast(tf.equal(normalizer, 0), dtype=tf.float32)
 
-    import pdb; pdb.set_trace()
     return multiplier_masks, normalizer
 
 
@@ -124,28 +123,28 @@ def fixed_point_update(flow, gamma, itr, multiplier_masks, normalizer):
 
     for k in range(itr):
         temp = tf.zeros_like(flow)
-        for i in range(w):
+        for i in range(MAX_WIDTH):
             j = i + 1
             temp += tf.concat([flow_copy1[:,:,j:854,:],
-                               tf.zeros((1, 480, j, 2), dtype=tf.float32)], axis=2) * multiplier_masks[i][0]
+                               tf.zeros((2, 480, j, 2), dtype=tf.float32)], axis=2) * multiplier_masks[i][0]
 
-            temp += tf.concat([tf.zeros((1, j, 854, 2), dtype=tf.float32),
+            temp += tf.concat([tf.zeros((2, j, 854, 2), dtype=tf.float32),
                                flow_copy1[:,0:(480-j),:,:]], axis=1) * multiplier_masks[i][1]
 
-            temp += tf.concat([tf.zeros((1, 480, j, 2), dtype=tf.float32),
+            temp += tf.concat([tf.zeros((2, 480, j, 2), dtype=tf.float32),
                                flow_copy1[:,:,0:(854-j),:]], axis=2) * multiplier_masks[i][2]
 
             temp += tf.concat([flow_copy1[:,j:480,:,:],
-                               tf.zeros((1, j, 854, 2), dtype=tf.float32)], axis=1) * multiplier_masks[i][3]
+                               tf.zeros((2, j, 854, 2), dtype=tf.float32)], axis=1) * multiplier_masks[i][3]
 
         temp += gamma * flow_copy2
         flow_copy1 = temp / (normalizer + gamma)
     return flow_copy1
 
-GOL = 4
+GOL = 10
 
 
-def smoothLoss(flow, gtMask, alpha, beta):
+def smoothLoss(flow, gt, alpha, beta):
     kernel = tf.transpose(tf.constant([\
         [ \
             [ \
@@ -167,8 +166,14 @@ def smoothLoss(flow, gtMask, alpha, beta):
         u = tf.slice(flow,[0,0,0,0],[-1,-1,-1,1])
         v = tf.slice(flow,[0,0,0,1],[-1,-1,-1,-1])
 
-        flowShape = flow.get_shape()
+	x_mask = X_MASKS[0]
+        y_mask = Y_MASKS[0]
+        gtMask = tf.nn.atrous_conv2d(gt, kernel, rate=1, padding="SAME")
+        gtMask = 1 - tf.square(gtMask)
+        gtMask = tf.stack([gtMask[:,:,:,0] * y_mask, gtMask[:,:,:,1] * x_mask], axis=-1)
 
+        flowShape = flow.get_shape()
+	tf.summary.image("smooth_flow", flowToRgb1(flow))
         #tf.summary.image("downMask", gtMask[:,:,:,0])
         neighborDiffU = tf.nn.conv2d(u,kernel,[1,1,1,1],padding="SAME") * gtMask
         neighborDiffV = tf.nn.conv2d(v,kernel,[1,1,1,1],padding="SAME") * gtMask
@@ -177,8 +182,8 @@ def smoothLoss(flow, gtMask, alpha, beta):
         dists = tf.reduce_sum(tf.abs(diffs),axis=3,keep_dims=True)
         robustLoss = charbonnierLoss(dists,alpha,beta,0.001)
 
-        robustLoss = tf.reduce_mean(robustLoss,reduction_indices=[1,2])
-        return robustLoss
+        tf.summary.scalar("Network Output Smoothness", tf.reduce_mean(robustLoss))
+	return robustLoss
 
 
 
@@ -204,8 +209,7 @@ def clampLoss(flow,gt,alpha,beta,validPixelMask=None,img0Grad=None,boundaryAlpha
 	],dtype=tf.float32),perm=[3,2,1,0])
 
 	with tf.variable_scope(None,default_name="smoothLoss"):
-        my_gt_mask = 1 - tf.square(tf.nn.atrous_conv2d(gt, kernel, rate=i+1, padding='SAME'))
-        import pdb; pdb.set_trace()
+	        my_gt_mask = 1 - tf.square(tf.nn.atrous_conv2d(gt, KERNEL, rate=1, padding='SAME'))
 		robustLoss = None
 
 		flowShape = flow.get_shape()
@@ -218,13 +222,13 @@ def clampLoss(flow,gt,alpha,beta,validPixelMask=None,img0Grad=None,boundaryAlpha
 			gtMask = 1 - tf.square(gtMask)
 			gtMask = tf.stack([gtMask[:,:,:,0] * y_mask, gtMask[:,:,:,1] * x_mask], axis=-1)
 
-            		flow_smoothness = smoothLoss(flow, gtMask, alpha, beta)
-            		tf.summary.scalar("Network Outut Smoothness", tf.reduce_mean(flow_smoothness))
+            		flow_smoothness = smoothLoss(flow, gt, alpha, beta)
+            		tf.summary.scalar("Network Output Smoothness", tf.reduce_mean(flow_smoothness))
 
             		multiplier_masks, normalizer = make_gt_masks(my_gt_mask, MAX_WIDTH)
             		flow_hat = fixed_point_update(flow, GOL, 10, multiplier_masks, normalizer)
 
-            		fhat_smoothness = smoothLoss(flow_hat, gtMask, alpha, beta)
+            		fhat_smoothness = smoothLoss(flow_hat, gt, alpha, beta)
             		tf.summary.scalar("fhat Smoothness", tf.reduce_mean(fhat_smoothness))
 
             		diffs = flow - flow_hat
@@ -238,11 +242,6 @@ def clampLoss(flow,gt,alpha,beta,validPixelMask=None,img0Grad=None,boundaryAlpha
 
 		return robustLoss
 		
-		if validPixelMask is None:
-			return robustLoss
-		else:
-			return robustLoss*smoothLossMaskCorrection(validPixelMask)
-
 
 import math
 def flowToRgb1(flow,zeroFlow="saturation"):

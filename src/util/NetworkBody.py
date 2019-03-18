@@ -78,7 +78,7 @@ class NetworkBody:
 		with tf.variable_scope(None,default_name="predict_flow0"):
 			predict_flow0 = convLayer(concat0,3,2,1)
 
-		predict_flow0 = predict_flow0 * self.flowScale
+		predict_flow0 = predict_flow0 * 20
 
 		self.flow0 = predict_flow0
 		self.flows = [predict_flow0]

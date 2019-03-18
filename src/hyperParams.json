@@ -22,7 +22,7 @@
     "robustness": 0.9
   },
   "instanceName": "unsupFlownet", 
-  "flowScale": 20.0,
+  "flowScale": 255.0,
   "resnet": false,
   "gradParams": {
     "scale": 255.0,
@@ -39,7 +39,7 @@
   "smoothParams": {
     "scale": 1.0,
     "robustness": 1.0,
-    "weight": 4000
+    "weight": 1e5
   },
   "boundaryAlpha": 6.5,
   "printFreq": 1000

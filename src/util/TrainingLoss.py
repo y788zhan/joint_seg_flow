@@ -17,8 +17,8 @@ class TrainingLoss:
 			vpm = trainingData.validMask
 
 			# unsup loss
-			pLossF, sLossF = unsupFlowLoss(predFlowF,predFlowB,frame0,frame1,vpm,instanceParams)
-			recLossF = pLossF + sLossF
+			pLossF, sLossF, segLossF = unsupFlowLoss(predFlowF,predFlowB,frame0,frame1,vpm,instanceParams)
+			recLossF = pLossF + sLossF + segLossF
 			if lossComponents["backward"]:
 				pLossB, sLossB = unsupFlowLoss(predFlowB,predFlowF,frame1,frame0,vpm,instanceParams, backward=True)
 				recLossB = pLossB + sLossB
@@ -40,13 +40,12 @@ class TrainingLoss:
 				totalLoss = recLossF + weightLoss
 				tf.summary.scalar("recLossF",tf.reduce_mean(recLossF))
 
-			tf.summary.scalar("weightDecay",tf.reduce_mean(weightLoss))
-			tf.summary.scalar("totalLoss",tf.reduce_mean(totalLoss))
-
 			pGrad = tf.gradients(pLossF, predFlowF)[0]
 			sGrad = tf.gradients(sLossF, predFlowF)[0]
+			segGrad = tf.gradients(segLossF, predFlowF)[0]
 			tf.summary.image("photo_gradients", flowToRgb1(pGrad, 'saturation'))
 			tf.summary.image("smooth_gradients", flowToRgb1(sGrad, 'saturation'))
+			tf.summary.image("seg_gradients", flowToRgb1(segGrad, "saturation"))
 			tf.summary.scalar("mean_photo_grad", tf.reduce_mean(tf.abs(pGrad)))
 			tf.summary.scalar("mean_smooth_grad", tf.reduce_mean(tf.abs(sGrad)))
 			self.loss = totalLoss

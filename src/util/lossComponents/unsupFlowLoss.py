@@ -31,17 +31,21 @@ def unsupFlowLoss(flow,flowB,frame0,frame1,validPixelMask,instanceParams, backwa
 		grad0 = frame0["grad"]
 		grad1 = frame1["grad"]
 		gt = frame0["gt"]
+		gt1 = frame1["gt"]
 		if not backward:
-			tf.summary.image("rgb0", frame0["rgb"])
-			tf.summary.image("rgb1", frame1["rgb"])
+			tf.summary.image("rgb0", rgb0)
+			tf.summary.image("rgb1", rgb0)
 			tf.summary.image("gt", gt)
 		# masking from simple occlusion/border
 		occMask = borderOcclusionMask(flow) # occ if goes off image
 		occInvalidMask = validPixelMask*occMask # occluded and invalid
-		gt = gt / 255.0
 		
 		# loss components
 		photo = photoLoss(flow,rgb0,rgb1,photoAlpha,photoBeta)
+
+		seg = photoLoss(flow, gt, gt1, 1, 1)
+		seg = seg * 10000
+
 		# grad = gradLoss(flow,grad0,grad1,gradAlpha,gradBeta)
 		imgGrad = None
 		if lossComponents["boundaries"]:
@@ -62,6 +66,7 @@ def unsupFlowLoss(flow,flowB,frame0,frame1,validPixelMask,instanceParams, backwa
 		# gradAvg = tf.reduce_mean(gradMasked,reduction_indices=[1,2])
 		smoothAvg = tf.reduce_mean(smoothMasked,reduction_indices=[1,2])
 		# smooth2ndAvg = tf.reduce_mean(smooth2ndMasked,reduction_indices=[1,2])
+		segAvg = tf.reduce_mean(smoothMasked, reduction_indices=[1,2])
 
 		# weight loss terms
 		# gradAvg = gradAvg*gradReg
@@ -72,8 +77,7 @@ def unsupFlowLoss(flow,flowB,frame0,frame1,validPixelMask,instanceParams, backwa
 		smoothLossName = "smoothLossB" if backward else "smoothLossF"
 		tf.summary.scalar(photoLossName,tf.reduce_mean(photoAvg))
 		# tf.summary.scalar(smoothLossName,tf.reduce_mean(smoothAvg))
-
 		smoothAvg = smoothAvg*smoothReg
 		# final loss
 		# finalLoss = photoAvg + smoothAvg
-		return photoAvg, smoothAvg
+		return photoAvg, smoothAvg, segAvg

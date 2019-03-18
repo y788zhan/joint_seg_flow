@@ -9,8 +9,8 @@ def photoLoss(flow,downsampledFrame0,downsampledFrame1,alpha,beta):
 		width = flowShape[2]
 		outshape = tf.stack([height,width])
 
+		tf.summary.scalar("FlowMax", tf.reduce_max(tf.abs(flow)))
 		warpedFrame2 = flowWarp(downsampledFrame1,flow)
-
 		# photometric subtraction
 		photoDiff = downsampledFrame0 - warpedFrame2
 		#photoDist = tf.reduce_sum(tf.abs(photoDiff),axis=3,keep_dims=True)

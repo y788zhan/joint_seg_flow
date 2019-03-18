@@ -50,17 +50,17 @@ class TrainingData:
 			## queuing complete
 
 			# mean subtraction
-			# mean = [[[[0.407871, 0.457525, 0.481094]]]]
-			img0raw = tf.cast(batch[0],tf.float32) / 255.0 #- mean
-			img1raw = tf.cast(batch[1],tf.float32) / 255.0 #- mean
-			gt0raw = tf.cast(batch[2], tf.float32)
-			gt1raw = tf.cast(batch[3], tf.float32)
+			mean = [[[[0.407871, 0.457525, 0.481094]]]]
+			img0raw = tf.cast(batch[0],tf.float32)
+			img1raw = tf.cast(batch[1],tf.float32)
+			gt0raw = tf.cast(batch[2], tf.float32) / 255.0
+			gt1raw = tf.cast(batch[3], tf.float32) / 255.0
 			## async section done ##
 
 			#image augmentation
 			photoParam = photoAugParam(batchSize,0.7,1.3,0.2,0.9,1.1,0.7,1.5,0.00)
-			imData0aug = img0raw #photoAug(img0raw,photoParam) - mean
-			imData1aug = img1raw #photoAug(img1raw,photoParam) - mean
+			imData0aug = img0raw / 255.0 - mean #photoAug(img0raw,photoParam) - mean
+			imData1aug = img1raw / 255.0 - mean#photoAug(img1raw,photoParam) - mean
 
 			# artificial border augmentation
 			borderMask = validPixelMask(tf.stack([1, \
@@ -68,12 +68,12 @@ class TrainingData:
 				img0raw.get_shape()[2], \
 				1]),borderThicknessH,borderThicknessW)
 
-			imData0aug *= borderMask
-			imData1aug *= borderMask
+			imData0aug *= 1
+			imData1aug *= 1
 
 			#LRN skipped
-			lrn0 = tf.nn.local_response_normalization(img0raw,depth_radius=2,alpha=(1.0/1.0),beta=0.7,bias=1)
-			lrn1 = tf.nn.local_response_normalization(img1raw,depth_radius=2,alpha=(1.0/1.0),beta=0.7,bias=1)
+			# lrn0 = tf.nn.local_response_normalization(img0raw,depth_radius=2,alpha=(1.0/1.0),beta=0.7,bias=1)
+			# lrn1 = tf.nn.local_response_normalization(img1raw,depth_radius=2,alpha=(1.0/1.0),beta=0.7,bias=1)
 
 			#gradient images
 			imData0Gray = rgbToGray(img0raw)
@@ -85,14 +85,14 @@ class TrainingData:
 			# ----------expose tensors-----------
 			self.frame0 = {
 				"rgb": imData0aug,
-				"rgbNorm": lrn0,
+				"rgbNorm": imData0aug,
 				"grad": imData0Grad,
 				"gt": gt0raw
 			}
 
 			self.frame1 = {
 				"rgb": imData1aug,
-				"rgbNorm": lrn1,
+				"rgbNorm": imData1aug,
 				"grad": imData1Grad,
 				"gt": gt1raw
 			}

@@ -47,7 +47,6 @@ class NetworkBody:
 		# expansive
 		with tf.variable_scope(None,default_name="predict_flow6"):
 			predict_flow6 = convLayer(conv6_1,3,2,1)
-
 		deconv5 = deconvLayerRelu(conv6_1,4,512,2)
 		concat5 = flowRefinementConcat(deconv5,conv5_1,predict_flow6)
 		with tf.variable_scope(None,default_name="predict_flow5"):

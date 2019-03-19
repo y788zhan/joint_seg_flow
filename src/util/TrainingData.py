@@ -84,17 +84,17 @@ class TrainingData:
 
 			# ----------expose tensors-----------
 			self.frame0 = {
-				"rgb": imData0aug,
-				"rgbNorm": imData0aug,
+				"rgb": imData0aug[:,16:-16,11:-11,:],
+				"rgbNorm": imData0aug[:,16:-16,11:-11,:],
 				"grad": imData0Grad,
-				"gt": gt0raw
+				"gt": gt0raw[:,16:-16,11:-11,:]
 			}
 
 			self.frame1 = {
-				"rgb": imData1aug,
-				"rgbNorm": imData1aug,
+				"rgb": imData1aug[:,16:-16,11:-11,:],
+				"rgbNorm": imData1aug[:,16:-16,11:-11,:],
 				"grad": imData1Grad,
-				"gt": gt1raw
+				"gt": gt1raw[:,16:-16,11:-11,:]
 			}
 
 			self.validMask = borderMask

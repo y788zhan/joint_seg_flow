@@ -37,14 +37,14 @@ def unsupFlowLoss(flow,flowB,frame0,frame1,validPixelMask,instanceParams, backwa
 			tf.summary.image("rgb1", rgb0)
 			tf.summary.image("gt", gt)
 		# masking from simple occlusion/border
-		occMask = borderOcclusionMask(flow) # occ if goes off image
-		occInvalidMask = validPixelMask*occMask # occluded and invalid
+		#occMask = borderOcclusionMask(flow) # occ if goes off image
+		occInvalidMask = 1#validPixelMask*occMask # occluded and invalid
 		
 		# loss components
 		photo = photoLoss(flow,rgb0,rgb1,photoAlpha,photoBeta)
 
 		seg = photoLoss(flow, gt, gt1, 1, 1)
-		seg = seg * 10000
+		seg = seg * 1e4
 
 		# grad = gradLoss(flow,grad0,grad1,gradAlpha,gradBeta)
 		imgGrad = None
@@ -52,7 +52,7 @@ def unsupFlowLoss(flow,flowB,frame0,frame1,validPixelMask,instanceParams, backwa
 			imgGrad = grad0
 
 		if lossComponents["asymmetricSmooth"]:
-			smoothMasked = asymmetricSmoothLoss(flow,gt,instanceParams,occMask,validPixelMask,imgGrad,boundaryAlpha, backward)
+			smoothMasked = asymmetricSmoothLoss(flow,gt,instanceParams,None,validPixelMask,imgGrad,boundaryAlpha, backward)
 		else:
 			smoothMasked = smoothLoss(flow,smoothAlpha,smoothBeta,validPixelMask,imgGrad,boundaryAlpha)
 		# smooth2ndMasked = smoothLoss2nd(flow,smooth2ndAlpha,smooth2ndBeta,validPixelMask,imgGrad,boundaryAlpha)
@@ -66,7 +66,7 @@ def unsupFlowLoss(flow,flowB,frame0,frame1,validPixelMask,instanceParams, backwa
 		# gradAvg = tf.reduce_mean(gradMasked,reduction_indices=[1,2])
 		smoothAvg = tf.reduce_mean(smoothMasked,reduction_indices=[1,2])
 		# smooth2ndAvg = tf.reduce_mean(smooth2ndMasked,reduction_indices=[1,2])
-		segAvg = tf.reduce_mean(smoothMasked, reduction_indices=[1,2])
+		segAvg = tf.reduce_mean(seg, reduction_indices=[1,2])
 
 		# weight loss terms
 		# gradAvg = gradAvg*gradReg
@@ -76,6 +76,7 @@ def unsupFlowLoss(flow,flowB,frame0,frame1,validPixelMask,instanceParams, backwa
 		photoLossName = "photoLossB" if backward else "photoLossF"
 		smoothLossName = "smoothLossB" if backward else "smoothLossF"
 		tf.summary.scalar(photoLossName,tf.reduce_mean(photoAvg))
+		tf.summary.scalar("segLossF", tf.reduce_mean(segAvg))
 		# tf.summary.scalar(smoothLossName,tf.reduce_mean(smoothAvg))
 		smoothAvg = smoothAvg*smoothReg
 		# final loss

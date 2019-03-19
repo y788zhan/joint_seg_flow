@@ -35,8 +35,8 @@ def make_mask(kernel_width, height, width, horizontal = True):
 
 MAX_WIDTH = 1
 # KERNELS = [make_kernels(i) for i in xrange(1, MAX_WIDTH + 1)]
-X_MASKS = [make_mask(i, 480, 854, True) for i in xrange(1, MAX_WIDTH + 1)]
-Y_MASKS = [make_mask(i, 480, 854, False) for i in xrange(1, MAX_WIDTH + 1)]
+X_MASKS = [make_mask(i, 448, 832, True) for i in xrange(1, MAX_WIDTH + 1)]
+Y_MASKS = [make_mask(i, 448, 832, False) for i in xrange(1, MAX_WIDTH + 1)]
 
 
 KERNEL = tf.transpose(tf.constant([[[[0,-1,0],
@@ -79,7 +79,7 @@ def smoothLossMaskCorrection(validMask):
 
 
 def make_gt_masks(gt_mask, w):
-    normalizer = tf.zeros((2, 480, 854, 2)) # batch size 2
+    normalizer = tf.zeros((2, 448, 832, 2)) # batch size 2
 
     multiplier_masks = []
     for i in range(w):
@@ -89,23 +89,23 @@ def make_gt_masks(gt_mask, w):
         j = i + 1
         multiplier_masks[i].append(
             tf.concat([
-                tf.tile(tf.expand_dims(gt_mask[:,:,j:854,0], axis=-1), (1,1,1,2)),
-                tf.zeros((2, 480, j, 2), dtype=tf.float32)], axis=2))
+                tf.tile(tf.expand_dims(gt_mask[:,:,j:832,0], axis=-1), (1,1,1,2)),
+                tf.zeros((2, 448, j, 2), dtype=tf.float32)], axis=2))
 
         multiplier_masks[i].append(
             tf.concat([
-                tf.zeros((2, j, 854, 2), dtype=tf.float32),
-                tf.tile(tf.expand_dims(gt_mask[:,0:(480-j),:,1], axis=-1), (1,1,1,2))], axis=1))
+                tf.zeros((2, j, 832, 2), dtype=tf.float32),
+                tf.tile(tf.expand_dims(gt_mask[:,0:(448-j),:,1], axis=-1), (1,1,1,2))], axis=1))
 
         multiplier_masks[i].append(
             tf.concat([
-                tf.zeros((2, 480, j, 2), dtype=tf.float32),
-                tf.tile(tf.expand_dims(gt_mask[:,:,0:(854-j),2], axis=-1), (1,1,1,2))], axis=2))
+                tf.zeros((2, 448, j, 2), dtype=tf.float32),
+                tf.tile(tf.expand_dims(gt_mask[:,:,0:(832-j),2], axis=-1), (1,1,1,2))], axis=2))
 
         multiplier_masks[i].append(
             tf.concat([
-                tf.tile(tf.expand_dims(gt_mask[:,j:480,:,3], axis=-1), (1,1,1,2)),
-                tf.zeros((2, j, 854, 2), dtype=tf.float32)], axis=1))
+                tf.tile(tf.expand_dims(gt_mask[:,j:448,:,3], axis=-1), (1,1,1,2)),
+                tf.zeros((2, j, 832, 2), dtype=tf.float32)], axis=1))
 
         normalizer += multiplier_masks[i][0] + multiplier_masks[i][1] + multiplier_masks[i][2] + multiplier_masks[i][3]
 
@@ -125,23 +125,23 @@ def fixed_point_update(flow, gamma, itr, multiplier_masks, normalizer):
         temp = tf.zeros_like(flow)
         for i in range(MAX_WIDTH):
             j = i + 1
-            temp += tf.concat([flow_copy1[:,:,j:854,:],
-                               tf.zeros((2, 480, j, 2), dtype=tf.float32)], axis=2) * multiplier_masks[i][0]
+            temp += tf.concat([flow_copy1[:,:,j:832,:],
+                               tf.zeros((2, 448, j, 2), dtype=tf.float32)], axis=2) * multiplier_masks[i][0]
 
-            temp += tf.concat([tf.zeros((2, j, 854, 2), dtype=tf.float32),
-                               flow_copy1[:,0:(480-j),:,:]], axis=1) * multiplier_masks[i][1]
+            temp += tf.concat([tf.zeros((2, j, 832, 2), dtype=tf.float32),
+                               flow_copy1[:,0:(448-j),:,:]], axis=1) * multiplier_masks[i][1]
 
-            temp += tf.concat([tf.zeros((2, 480, j, 2), dtype=tf.float32),
-                               flow_copy1[:,:,0:(854-j),:]], axis=2) * multiplier_masks[i][2]
+            temp += tf.concat([tf.zeros((2, 448, j, 2), dtype=tf.float32),
+                               flow_copy1[:,:,0:(832-j),:]], axis=2) * multiplier_masks[i][2]
 
-            temp += tf.concat([flow_copy1[:,j:480,:,:],
-                               tf.zeros((2, j, 854, 2), dtype=tf.float32)], axis=1) * multiplier_masks[i][3]
+            temp += tf.concat([flow_copy1[:,j:448,:,:],
+                               tf.zeros((2, j, 832, 2), dtype=tf.float32)], axis=1) * multiplier_masks[i][3]
 
         temp += gamma * flow_copy2
         flow_copy1 = temp / (normalizer + gamma)
     return flow_copy1
 
-GOL = 10
+GOL = 4
 
 
 def smoothLoss(flow, gt, alpha, beta):
@@ -179,8 +179,8 @@ def smoothLoss(flow, gt, alpha, beta):
         neighborDiffV = tf.nn.conv2d(v,kernel,[1,1,1,1],padding="SAME") * gtMask
 
         diffs = tf.concat([neighborDiffU,neighborDiffV],3)
-        dists = tf.reduce_sum(tf.abs(diffs),axis=3,keep_dims=True)
-        robustLoss = charbonnierLoss(dists,alpha,beta,0.001)
+	dists = charbonnierLoss(diffs, alpha, beta, 0.001)
+	robustLoss = tf.reduce_sum(dists, axis=3, keep_dims=True)
 
         tf.summary.scalar("Network Output Smoothness", tf.reduce_mean(robustLoss))
 	return robustLoss

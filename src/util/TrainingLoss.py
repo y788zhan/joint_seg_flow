@@ -48,4 +48,5 @@ class TrainingLoss:
 			tf.summary.image("seg_gradients", flowToRgb1(segGrad, "saturation"))
 			tf.summary.scalar("mean_photo_grad", tf.reduce_mean(tf.abs(pGrad)))
 			tf.summary.scalar("mean_smooth_grad", tf.reduce_mean(tf.abs(sGrad)))
+			tf.summary.scalar("mean_seg_grad", tf.reduce_mean(tf.abs(segGrad)))
 			self.loss = totalLoss

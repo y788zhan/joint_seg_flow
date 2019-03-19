@@ -1,0 +1,1 @@
+data/DAVIS/Annotations/480p/swing/00043.png

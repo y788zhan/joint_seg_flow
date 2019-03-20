@@ -18,7 +18,7 @@ class TrainingLoss:
 
 			# unsup loss
 			pLossF, sLossF, segLossF = unsupFlowLoss(predFlowF,predFlowB,frame0,frame1,vpm,instanceParams)
-			recLossF = pLossF + sLossF + segLossF
+			recLossF = pLossF + sLossF #+ segLossF
 			if lossComponents["backward"]:
 				pLossB, sLossB = unsupFlowLoss(predFlowB,predFlowF,frame1,frame0,vpm,instanceParams, backward=True)
 				recLossB = pLossB + sLossB

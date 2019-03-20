@@ -44,6 +44,7 @@ def unsupFlowLoss(flow,flowB,frame0,frame1,validPixelMask,instanceParams, backwa
 		photo = photoLoss(flow,rgb0,rgb1,photoAlpha,photoBeta)
 
 		seg = photoLoss(flow, gt, gt1, 1, 1)
+		#seg = seg * 0
 		seg = seg * 1e4
 
 		# grad = gradLoss(flow,grad0,grad1,gradAlpha,gradBeta)

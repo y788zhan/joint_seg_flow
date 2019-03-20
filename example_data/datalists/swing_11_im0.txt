@@ -1,1 +1,1 @@
-data/DAVIS/JPEGImages/480p/swing/00043.jpg
+data/DAVIS/JPEGImages/480p/bus/00023.jpg

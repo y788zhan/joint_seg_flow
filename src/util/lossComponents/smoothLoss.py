@@ -141,7 +141,7 @@ def fixed_point_update(flow, gamma, itr, multiplier_masks, normalizer):
         flow_copy1 = temp / (normalizer + gamma)
     return flow_copy1
 
-GOL = 4
+GOL = 1
 
 
 def smoothLoss(flow, gt, alpha, beta):

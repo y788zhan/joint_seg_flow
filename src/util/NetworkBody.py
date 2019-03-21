@@ -80,4 +80,5 @@ class NetworkBody:
 		predict_flow0 = predict_flow0 * 20
 
 		self.flow0 = predict_flow0
-		self.flows = [predict_flow0]
+		self.flows = [predict_flow0, predict_flow1, predict_flow2,
+                      predict_flow3, predict_flow4, predict_flow5, predict_flow6]

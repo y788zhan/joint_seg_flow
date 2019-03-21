@@ -26,16 +26,17 @@ def unsupFlowLoss(flow,flowB,frame0,frame1,validPixelMask,instanceParams, backwa
 		lossComponents = instanceParams["lossComponents"]
 
 		# helpers
-		rgb0 = frame0["rgbNorm"]
-		rgb1 = frame1["rgbNorm"]
-		grad0 = frame0["grad"]
-		grad1 = frame1["grad"]
-		gt = frame0["gt"]
-		gt1 = frame1["gt"]
-		if not backward:
-			tf.summary.image("rgb0", rgb0)
-			tf.summary.image("rgb1", rgb1)
-			tf.summary.image("gt", gt)
+        size = [flow.shape[1], flow.shape[2]]
+		rgb0 = tf.images.bilinear_resize(frame0["rgbNorm"], size)
+		rgb1 = tf.images.bilinear_resize(frame1["rgbNorm"], size)
+		grad0 = tf.images.bilinear_resize(frame0["grad"], size)
+		grad1 = tf.images.bilinear_resize(frame1["grad"], size)
+		gt = tf.images.bilinear_resize(frame0["gt"], size)
+		gt1 = tf.images.bilinear_resize(frame1["gt"], size)
+		# if not backward:
+		# 	tf.summary.image("rgb0", rgb0)
+		# 	tf.summary.image("rgb1", rgb1)
+		# 	tf.summary.image("gt", gt)
 		# masking from simple occlusion/border
 		#occMask = borderOcclusionMask(flow) # occ if goes off image
 		occInvalidMask = 1#validPixelMask*occMask # occluded and invalid

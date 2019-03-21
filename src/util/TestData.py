@@ -38,12 +38,12 @@ class TestData:
             gtData0 = tf.expand_dims(gtData0,0)
 
             self.frame0 = {
-                "rgb": imData0,
-                "gt": gtData0
+                "rgb": imData0[:,16:-16,11:-11,:],
+                "gt": gtData0[:,16:-16,11:-11,:]
             }
 
             self.frame1 = {
-                "rgb": imData1
+                "rgb": imData1[:,16:-16,11:-11,:]
             }
 
             self.height = tf.cast(desiredHeight,tf.int32)

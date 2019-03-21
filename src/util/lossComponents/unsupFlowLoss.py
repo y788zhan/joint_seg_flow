@@ -34,7 +34,7 @@ def unsupFlowLoss(flow,flowB,frame0,frame1,validPixelMask,instanceParams, backwa
 		gt1 = frame1["gt"]
 		if not backward:
 			tf.summary.image("rgb0", rgb0)
-			tf.summary.image("rgb1", rgb0)
+			tf.summary.image("rgb1", rgb1)
 			tf.summary.image("gt", gt)
 		# masking from simple occlusion/border
 		#occMask = borderOcclusionMask(flow) # occ if goes off image
@@ -43,9 +43,17 @@ def unsupFlowLoss(flow,flowB,frame0,frame1,validPixelMask,instanceParams, backwa
 		# loss components
 		photo = photoLoss(flow,rgb0,rgb1,photoAlpha,photoBeta)
 
+		flowF = flow * 1.0
+		flowBCopy = flowB * 1.0
+		flowF = tf.stop_gradient(flowF)
+		flowBCopy = tf.stop_gradient(flowBCopy)
+		occMask = occluMask(flowF, flowBCopy, backward=backward)
+		photo = photo * (1.0 - occMask)
+		tf.summary.image("occlusion_mask", occMask)
+
 		seg = photoLoss(flow, gt, gt1, 1, 1)
 		#seg = seg * 0
-		seg = seg * 1e4
+		seg = seg * 1e4 * (1.0 - occMask)
 
 		# grad = gradLoss(flow,grad0,grad1,gradAlpha,gradBeta)
 		imgGrad = None
@@ -53,13 +61,13 @@ def unsupFlowLoss(flow,flowB,frame0,frame1,validPixelMask,instanceParams, backwa
 			imgGrad = grad0
 
 		if lossComponents["asymmetricSmooth"]:
-			smoothMasked = asymmetricSmoothLoss(flow,gt,instanceParams,None,validPixelMask,imgGrad,boundaryAlpha, backward)
+			smoothMasked, gtMask = asymmetricSmoothLoss(flow,gt,instanceParams,None,validPixelMask,imgGrad,boundaryAlpha, backward)
 		else:
 			smoothMasked = smoothLoss(flow,smoothAlpha,smoothBeta,validPixelMask,imgGrad,boundaryAlpha)
 		# smooth2ndMasked = smoothLoss2nd(flow,smooth2ndAlpha,smooth2ndBeta,validPixelMask,imgGrad,boundaryAlpha)
 
 		# apply masking
-		photoMasked = photo * occInvalidMask
+		photoMasked = photo * occInvalidMask * gtMask
 		# gradMasked = grad * occInvalidMask
 
 		# average spatially
@@ -83,3 +91,43 @@ def unsupFlowLoss(flow,flowB,frame0,frame1,validPixelMask,instanceParams, backwa
 		# final loss
 		# finalLoss = photoAvg + smoothAvg
 		return photoAvg, smoothAvg, segAvg
+
+
+def occluMask(flowF, flowB, alpha1=0.01, alpha2=0.1, backward=False):
+    flowBWarp = flowWarp(flowB, flowF)
+    if not backward:
+        tf.summary.image("warped_backwards_flow", flowToRgb1(flowBWarp))
+    lhs = tf.reduce_sum(tf.square(tf.abs(flowF + flowBWarp)), axis=-1, keepdims=True)
+    rhs = alpha1 * (
+        tf.reduce_sum(tf.square(tf.abs(flowF)), axis=-1, keepdims=True) + tf.reduce_sum(
+            tf.square(tf.abs(flowBWarp)), axis=-1, keepdims=True)) + alpha2
+
+    ret = tf.cast(tf.less_equal(lhs, rhs), tf.float32)
+    return 1.0 - ret
+
+
+
+import math
+def flowToRgb1(flow,zeroFlow="saturation"):
+    with tf.variable_scope(None,default_name="flowToRgb"):
+        mag = tf.sqrt(tf.reduce_sum(flow**2,axis=-1))
+        ang180 = tf.atan2(flow[:,:,:,1],flow[:,:,:,0])
+        ones = tf.ones_like(mag)
+
+        # fix angle so righward motion is red
+        ang = ang180*tf.cast(tf.greater_equal(ang180,0),tf.float32)
+        ang += (ang180+2*math.pi)*tf.cast(tf.less(ang180,0),tf.float32)
+
+        # normalize for hsv
+        largestMag = tf.reduce_max(mag,axis=[1,2])
+        magNorm = tf.stack([mag[0,:,:] / largestMag[0], mag[1,:,:] / largestMag[1]], axis=0)
+        angNorm = ang/(math.pi*2)
+
+        if zeroFlow == "value":
+                hsv = tf.stack([angNorm,ones,magNorm],axis=-1)
+        elif zeroFlow == "saturation":
+                hsv = tf.stack([angNorm,magNorm,ones],axis=-1)
+        else:
+                assert("zeroFlow mode must be {'value','saturation'}")
+        rgb = tf.image.hsv_to_rgb(hsv)
+        return rgb

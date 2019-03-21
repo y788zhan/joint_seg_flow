@@ -13,9 +13,9 @@ def asymmetricSmoothLoss(flow,gt,instanceParams,occMask,validPixelMask,img0Grad=
 		occBeta = instanceParams["smoothOccParams"]["scale"]
 
 		# non occluded
-		#nonOccSmooth = clampLoss(flow, gt, alpha,beta,occMask,img0Grad,boundaryAlpha, verbose=not backward)
-		nonOccSmooth = smoothLoss(flow, gt, alpha, beta)
-		return nonOccSmooth
+		#nonOccSmooth, gtMask = clampLoss(flow, gt, alpha,beta,occMask,img0Grad,boundaryAlpha, verbose=not backward)
+		nonOccSmooth, gtMask = smoothLoss(flow, gt, alpha, beta)
+		return nonOccSmooth, gtMask
 
 import math
 def vis_flow(flow,zeroFlow="saturation"):

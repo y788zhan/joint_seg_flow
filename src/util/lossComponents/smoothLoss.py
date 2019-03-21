@@ -35,8 +35,8 @@ def make_mask(kernel_width, height, width, horizontal = True):
 
 MAX_WIDTH = 1
 # KERNELS = [make_kernels(i) for i in xrange(1, MAX_WIDTH + 1)]
-X_MASKS = [make_mask(i, 448, 832, True) for i in xrange(1, MAX_WIDTH + 1)]
-Y_MASKS = [make_mask(i, 448, 832, False) for i in xrange(1, MAX_WIDTH + 1)]
+X_MASKS = [make_mask(i, H, W, True) for i in xrange(1, MAX_WIDTH + 1)]
+Y_MASKS = [make_mask(i, H, W, False) for i in xrange(1, MAX_WIDTH + 1)]
 
 
 KERNEL = tf.transpose(tf.constant([[[[0,-1,0],
@@ -79,7 +79,8 @@ def smoothLossMaskCorrection(validMask):
 
 
 def make_gt_masks(gt_mask, w):
-    normalizer = tf.zeros((2, 448, 832, 2)) # batch size 2
+    H, W = gt_mask.shape[1], gt_mask[2]
+    normalizer = tf.zeros((2, H, W, 2)) # batch size 2
 
     multiplier_masks = []
     for i in range(w):
@@ -89,23 +90,23 @@ def make_gt_masks(gt_mask, w):
         j = i + 1
         multiplier_masks[i].append(
             tf.concat([
-                tf.tile(tf.expand_dims(gt_mask[:,:,j:832,0], axis=-1), (1,1,1,2)),
-                tf.zeros((2, 448, j, 2), dtype=tf.float32)], axis=2))
+                tf.tile(tf.expand_dims(gt_mask[:,:,j:W,0], axis=-1), (1,1,1,2)),
+                tf.zeros((2, H, j, 2), dtype=tf.float32)], axis=2))
 
         multiplier_masks[i].append(
             tf.concat([
-                tf.zeros((2, j, 832, 2), dtype=tf.float32),
-                tf.tile(tf.expand_dims(gt_mask[:,0:(448-j),:,1], axis=-1), (1,1,1,2))], axis=1))
+                tf.zeros((2, j, W, 2), dtype=tf.float32),
+                tf.tile(tf.expand_dims(gt_mask[:,0:(H-j),:,1], axis=-1), (1,1,1,2))], axis=1))
 
         multiplier_masks[i].append(
             tf.concat([
-                tf.zeros((2, 448, j, 2), dtype=tf.float32),
-                tf.tile(tf.expand_dims(gt_mask[:,:,0:(832-j),2], axis=-1), (1,1,1,2))], axis=2))
+                tf.zeros((2, H, j, 2), dtype=tf.float32),
+                tf.tile(tf.expand_dims(gt_mask[:,:,0:(W-j),2], axis=-1), (1,1,1,2))], axis=2))
 
         multiplier_masks[i].append(
             tf.concat([
-                tf.tile(tf.expand_dims(gt_mask[:,j:448,:,3], axis=-1), (1,1,1,2)),
-                tf.zeros((2, j, 832, 2), dtype=tf.float32)], axis=1))
+                tf.tile(tf.expand_dims(gt_mask[:,j:H,:,3], axis=-1), (1,1,1,2)),
+                tf.zeros((2, j, W, 2), dtype=tf.float32)], axis=1))
 
         normalizer += multiplier_masks[i][0] + multiplier_masks[i][1] + multiplier_masks[i][2] + multiplier_masks[i][3]
 
@@ -116,6 +117,7 @@ def make_gt_masks(gt_mask, w):
 
 
 def fixed_point_update(flow, gamma, itr, multiplier_masks, normalizer):
+    H, W = flow.shape[1], flow.shape[2]
     flow_copy1 = flow * 1.0
     flow_copy2 = flow * 1.0
     flow_copy1 = tf.stop_gradient(flow_copy1)
@@ -125,17 +127,17 @@ def fixed_point_update(flow, gamma, itr, multiplier_masks, normalizer):
         temp = tf.zeros_like(flow)
         for i in range(MAX_WIDTH):
             j = i + 1
-            temp += tf.concat([flow_copy1[:,:,j:832,:],
-                               tf.zeros((2, 448, j, 2), dtype=tf.float32)], axis=2) * multiplier_masks[i][0]
+            temp += tf.concat([flow_copy1[:,:,j:W,:],
+                               tf.zeros((2, H, j, 2), dtype=tf.float32)], axis=2) * multiplier_masks[i][0]
 
-            temp += tf.concat([tf.zeros((2, j, 832, 2), dtype=tf.float32),
-                               flow_copy1[:,0:(448-j),:,:]], axis=1) * multiplier_masks[i][1]
+            temp += tf.concat([tf.zeros((2, j, W, 2), dtype=tf.float32),
+                               flow_copy1[:,0:(H-j),:,:]], axis=1) * multiplier_masks[i][1]
 
-            temp += tf.concat([tf.zeros((2, 448, j, 2), dtype=tf.float32),
-                               flow_copy1[:,:,0:(832-j),:]], axis=2) * multiplier_masks[i][2]
+            temp += tf.concat([tf.zeros((2, H, j, 2), dtype=tf.float32),
+                               flow_copy1[:,:,0:(W-j),:]], axis=2) * multiplier_masks[i][2]
 
-            temp += tf.concat([flow_copy1[:,j:448,:,:],
-                               tf.zeros((2, j, 832, 2), dtype=tf.float32)], axis=1) * multiplier_masks[i][3]
+            temp += tf.concat([flow_copy1[:,j:H,:,:],
+                               tf.zeros((2, j, W, 2), dtype=tf.float32)], axis=1) * multiplier_masks[i][3]
 
         temp += gamma * flow_copy2
         flow_copy1 = temp / (normalizer + gamma)
@@ -166,11 +168,8 @@ def smoothLoss(flow, gt, alpha, beta, verbose=False):
         u = tf.slice(flow,[0,0,0,0],[-1,-1,-1,1])
         v = tf.slice(flow,[0,0,0,1],[-1,-1,-1,-1])
 
-	x_mask = X_MASKS[0]
-        y_mask = Y_MASKS[0]
         gtMask = tf.nn.atrous_conv2d(gt, kernel, rate=1, padding="SAME")
         gtMask = 1 - tf.square(gtMask)
-        gtMask = tf.stack([gtMask[:,:,:,0] * y_mask, gtMask[:,:,:,1] * x_mask], axis=-1)
 
         flowShape = flow.get_shape()
 	if verbose:
@@ -216,11 +215,8 @@ def clampLoss(flow,gt,alpha,beta,validPixelMask=None,img0Grad=None,boundaryAlpha
 
 		flowShape = flow.get_shape()
 		for i in xrange(MAX_WIDTH):
-			x_mask = X_MASKS[i]
-			y_mask = Y_MASKS[i]
 			gtMask = tf.nn.atrous_conv2d(gt, kernel, rate=i+1, padding="SAME")
 			gtMask = 1 - tf.square(gtMask)
-			gtMask = tf.stack([gtMask[:,:,:,0] * y_mask, gtMask[:,:,:,1] * x_mask], axis=-1)
 
             		flow_smoothness, ret = smoothLoss(flow, gt, alpha, beta, verbose=verbose)
 			if verbose:

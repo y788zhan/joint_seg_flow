@@ -35,8 +35,8 @@ def make_mask(kernel_width, height, width, horizontal = True):
 
 MAX_WIDTH = 1
 # KERNELS = [make_kernels(i) for i in xrange(1, MAX_WIDTH + 1)]
-X_MASKS = [make_mask(i, H, W, True) for i in xrange(1, MAX_WIDTH + 1)]
-Y_MASKS = [make_mask(i, H, W, False) for i in xrange(1, MAX_WIDTH + 1)]
+#X_MASKS = [make_mask(i, H, W, True) for i in xrange(1, MAX_WIDTH + 1)]
+#Y_MASKS = [make_mask(i, H, W, False) for i in xrange(1, MAX_WIDTH + 1)]
 
 
 KERNEL = tf.transpose(tf.constant([[[[0,-1,0],
@@ -79,7 +79,7 @@ def smoothLossMaskCorrection(validMask):
 
 
 def make_gt_masks(gt_mask, w):
-    H, W = gt_mask.shape[1], gt_mask[2]
+    H, W = gt_mask.shape[1], gt_mask.shape[2]
     normalizer = tf.zeros((2, H, W, 2)) # batch size 2
 
     multiplier_masks = []
@@ -143,7 +143,7 @@ def fixed_point_update(flow, gamma, itr, multiplier_masks, normalizer):
         flow_copy1 = temp / (normalizer + gamma)
     return flow_copy1
 
-GOL = 1
+GOL = 0.25
 
 
 def smoothLoss(flow, gt, alpha, beta, verbose=False):
@@ -172,7 +172,7 @@ def smoothLoss(flow, gt, alpha, beta, verbose=False):
         gtMask = 1 - tf.square(gtMask)
 
         flowShape = flow.get_shape()
-	if verbose:
+	if verbose and flow.shape[1] == 448:
 		tf.summary.image("smooth_flow", flowToRgb1(flow))
         #tf.summary.image("downMask", gtMask[:,:,:,0])
         neighborDiffU = tf.nn.conv2d(u,kernel,[1,1,1,1],padding="SAME") * gtMask
@@ -182,9 +182,10 @@ def smoothLoss(flow, gt, alpha, beta, verbose=False):
 	dists = charbonnierLoss(diffs, alpha, beta, 0.001)
 	robustLoss = tf.reduce_sum(dists, axis=3, keep_dims=True)
 
-	if verbose:
-        	tf.summary.scalar("Network Output Smoothness", tf.reduce_mean(robustLoss))
-	return robustLoss, gtMask
+	scale = 448 / flow.shape[1].value
+	if verbose and scale == 1:
+        	tf.summary.scalar("smoothness", tf.reduce_mean(robustLoss))
+	return robustLoss
 
 
 
@@ -200,7 +201,7 @@ def clampLoss(flow,gt,alpha,beta,validPixelMask=None,img0Grad=None,boundaryAlpha
 				[0,0,0]\
 			] \
 		], \
-		[ \
+		[
 			[ \
 				[0,0,0],\
 				[0,1,0],\
@@ -218,16 +219,12 @@ def clampLoss(flow,gt,alpha,beta,validPixelMask=None,img0Grad=None,boundaryAlpha
 			gtMask = tf.nn.atrous_conv2d(gt, kernel, rate=i+1, padding="SAME")
 			gtMask = 1 - tf.square(gtMask)
 
-            		flow_smoothness, ret = smoothLoss(flow, gt, alpha, beta, verbose=verbose)
-			if verbose:
-            			tf.summary.scalar("Network Output Smoothness", tf.reduce_mean(flow_smoothness))
+            		flow_smoothness = smoothLoss(flow, gt, alpha, beta, verbose=verbose)
 
             		multiplier_masks, normalizer = make_gt_masks(my_gt_mask, MAX_WIDTH)
-            		flow_hat = fixed_point_update(flow, GOL, 10, multiplier_masks, normalizer)
+            		flow_hat = fixed_point_update(flow, GOL, 20, multiplier_masks, normalizer)
 
-            		fhat_smoothness, ret = smoothLoss(flow_hat, gt, alpha, beta, verbose=verbose)
-			if verbose:
-            			tf.summary.scalar("fhat Smoothness", tf.reduce_mean(fhat_smoothness))
+            		fhat_smoothness = smoothLoss(flow_hat, gt, alpha, beta, verbose=verbose)
 
             		diffs = flow - flow_hat
 
@@ -238,7 +235,7 @@ def clampLoss(flow,gt,alpha,beta,validPixelMask=None,img0Grad=None,boundaryAlpha
 			else:
 				robustLoss += tf.reduce_sum(dists, axis=3, keep_dims=True)
 
-		return robustLoss, ret
+		return robustLoss
 		
 
 import math

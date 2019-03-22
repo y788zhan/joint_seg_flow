@@ -26,13 +26,14 @@ def unsupFlowLoss(flow,flowB,frame0,frame1,validPixelMask,instanceParams, backwa
 		lossComponents = instanceParams["lossComponents"]
 
 		# helpers
-        size = [flow.shape[1], flow.shape[2]]
-		rgb0 = tf.images.bilinear_resize(frame0["rgbNorm"], size)
-		rgb1 = tf.images.bilinear_resize(frame1["rgbNorm"], size)
-		grad0 = tf.images.bilinear_resize(frame0["grad"], size)
-		grad1 = tf.images.bilinear_resize(frame1["grad"], size)
-		gt = tf.images.bilinear_resize(frame0["gt"], size)
-		gt1 = tf.images.bilinear_resize(frame1["gt"], size)
+ 	        size = [flow.shape[1], flow.shape[2]]
+		scale = 448 / size[0].value
+		rgb0 = tf.image.resize_bilinear(frame0["rgbNorm"], size)
+		rgb1 = tf.image.resize_bilinear(frame1["rgbNorm"], size)
+		grad0 = tf.image.resize_bilinear(frame0["grad"], size)
+		grad1 = tf.image.resize_bilinear(frame1["grad"], size)
+		gt = tf.image.resize_bilinear(frame0["gt"], size)
+		gt1 = tf.image.resize_bilinear(frame1["gt"], size)
 		# if not backward:
 		# 	tf.summary.image("rgb0", rgb0)
 		# 	tf.summary.image("rgb1", rgb1)
@@ -44,13 +45,10 @@ def unsupFlowLoss(flow,flowB,frame0,frame1,validPixelMask,instanceParams, backwa
 		# loss components
 		photo = photoLoss(flow,rgb0,rgb1,photoAlpha,photoBeta)
 
-		flowF = flow * 1.0
-		flowBCopy = flowB * 1.0
-		flowF = tf.stop_gradient(flowF)
-		flowBCopy = tf.stop_gradient(flowBCopy)
-		occMask = occluMask(flowF, flowBCopy, backward=backward)
-		photo = photo * (1.0 - occMask)
-		tf.summary.image("occlusion_mask", occMask)
+		occMask = occluMask(flow, flowB, alpha2 = 0.5 / (scale ** 2), backward=backward)
+		photo = photo * (1.0 - occMask) + 100 * occMask
+		if flow.shape[1] == 448:
+			tf.summary.image("occlusion_mask", occMask)
 
 		seg = photoLoss(flow, gt, gt1, 1, 1)
 		#seg = seg * 0
@@ -62,13 +60,13 @@ def unsupFlowLoss(flow,flowB,frame0,frame1,validPixelMask,instanceParams, backwa
 			imgGrad = grad0
 
 		if lossComponents["asymmetricSmooth"]:
-			smoothMasked, gtMask = asymmetricSmoothLoss(flow,gt,instanceParams,None,validPixelMask,imgGrad,boundaryAlpha, backward)
+			smoothMasked = asymmetricSmoothLoss(flow,gt,instanceParams,None,validPixelMask,imgGrad,boundaryAlpha, backward)
 		else:
 			smoothMasked = smoothLoss(flow,smoothAlpha,smoothBeta,validPixelMask,imgGrad,boundaryAlpha)
 		# smooth2ndMasked = smoothLoss2nd(flow,smooth2ndAlpha,smooth2ndBeta,validPixelMask,imgGrad,boundaryAlpha)
 
 		# apply masking
-		photoMasked = photo * occInvalidMask * gtMask
+		photoMasked = photo * occInvalidMask
 		# gradMasked = grad * occInvalidMask
 
 		# average spatially
@@ -85,8 +83,9 @@ def unsupFlowLoss(flow,flowB,frame0,frame1,validPixelMask,instanceParams, backwa
 		# summaries ----------------------------
 		photoLossName = "photoLossB" if backward else "photoLossF"
 		smoothLossName = "smoothLossB" if backward else "smoothLossF"
-		tf.summary.scalar(photoLossName,tf.reduce_mean(photoAvg))
-		tf.summary.scalar("segLossF", tf.reduce_mean(segAvg))
+		if scale == 1:
+			tf.summary.scalar(photoLossName,tf.reduce_mean(photoAvg))
+			tf.summary.scalar("segLossF", tf.reduce_mean(segAvg))
 		# tf.summary.scalar(smoothLossName,tf.reduce_mean(smoothAvg))
 		smoothAvg = smoothAvg*smoothReg
 		# final loss
@@ -94,10 +93,8 @@ def unsupFlowLoss(flow,flowB,frame0,frame1,validPixelMask,instanceParams, backwa
 		return photoAvg, smoothAvg, segAvg
 
 
-def occluMask(flowF, flowB, alpha1=0.01, alpha2=0.1, backward=False):
+def occluMask(flowF, flowB, alpha1=0.01, alpha2=0.5, backward=False):
     flowBWarp = flowWarp(flowB, flowF)
-    if not backward:
-        tf.summary.image("warped_backwards_flow", flowToRgb1(flowBWarp))
     lhs = tf.reduce_sum(tf.square(tf.abs(flowF + flowBWarp)), axis=-1, keepdims=True)
     rhs = alpha1 * (
         tf.reduce_sum(tf.square(tf.abs(flowF)), axis=-1, keepdims=True) + tf.reduce_sum(

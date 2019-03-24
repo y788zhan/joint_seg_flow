@@ -20,7 +20,8 @@ class TrainingLoss:
         	        #rel_weights = [1, 0.32, 0.3, 0.28, 0.08]
 			rel_weights = [1] * 5
 			# unsup loss
-            		for i in range(len(networkF.flows)):
+			levels = len(networkF.flows) if instanceParams["multiscale"] else 1
+            		for i in range(levels):
                 		predFlowF = networkF.flows[i]
                 		predFlowB = networkB.flows[i]
 

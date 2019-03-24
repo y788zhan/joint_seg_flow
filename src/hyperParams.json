@@ -6,6 +6,10 @@
     "backward": true,
     "asymmetricSmooth": true
   },
+  "occlusion": false,
+  "multiscale": true,
+  "split": true,
+  "segmentationConsistency", false,
   "weightDecay": 0.0,
   "photoParams": {
     "scale": 255.0,

@@ -68,9 +68,6 @@ class TrainingData:
 				img0raw.get_shape()[2], \
 				1]),borderThicknessH,borderThicknessW)
 
-			imData0aug *= 1
-			imData1aug *= 1
-
 			#LRN skipped
 			# lrn0 = tf.nn.local_response_normalization(img0raw,depth_radius=2,alpha=(1.0/1.0),beta=0.7,bias=1)
 			# lrn1 = tf.nn.local_response_normalization(img1raw,depth_radius=2,alpha=(1.0/1.0),beta=0.7,bias=1)

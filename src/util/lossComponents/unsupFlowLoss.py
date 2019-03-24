@@ -44,16 +44,17 @@ def unsupFlowLoss(flow,flowB,frame0,frame1,validPixelMask,instanceParams, backwa
 		
 		# loss components
 		photo = photoLoss(flow,rgb0,rgb1,photoAlpha,photoBeta)
-
-		occMask = occluMask(flow, flowB, alpha2 = 0.5 / (scale ** 2), backward=backward)
-		photo = photo * (1.0 - occMask) + 100 * occMask
-		if flow.shape[1] == 448:
-			tf.summary.image("occlusion_mask", occMask)
-
 		seg = photoLoss(flow, gt, gt1, 1, 1)
 		#seg = seg * 0
-		seg = seg * 1e4 * (1.0 - occMask)
+		seg = seg * 1e4
 
+		if instanceParams["occlusion"]:
+			occMask = occluMask(flow, flowB, alpha2 = 0.5 / (scale ** 2), backward=backward)
+			if flow.shape[1] == 448:
+				tf.summary.image("occlusion_mask", occMask)
+			seg = seg * (1.0 - occMask)
+			photo = photo * (1.0 - occMask) + 100 * occMask
+			
 		# grad = gradLoss(flow,grad0,grad1,gradAlpha,gradBeta)
 		imgGrad = None
 		if lossComponents["boundaries"]:
@@ -86,10 +87,12 @@ def unsupFlowLoss(flow,flowB,frame0,frame1,validPixelMask,instanceParams, backwa
 		if scale == 1:
 			tf.summary.scalar(photoLossName,tf.reduce_mean(photoAvg))
 			tf.summary.scalar("segLossF", tf.reduce_mean(segAvg))
-		# tf.summary.scalar(smoothLossName,tf.reduce_mean(smoothAvg))
+			tf.summary.scalar("clampLossF",tf.reduce_mean(smoothAvg))
 		smoothAvg = smoothAvg*smoothReg
 		# final loss
 		# finalLoss = photoAvg + smoothAvg
+		if not instanceParams["segmentationConsistency"]:
+			segAvg = tf.zeros_like(smoothAvg)
 		return photoAvg, smoothAvg, segAvg
 
 

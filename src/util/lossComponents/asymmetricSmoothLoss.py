@@ -13,8 +13,10 @@ def asymmetricSmoothLoss(flow,gt,instanceParams,occMask,validPixelMask,img0Grad=
 		occBeta = instanceParams["smoothOccParams"]["scale"]
 
 		# non occluded
-		nonOccSmooth= clampLoss(flow, gt, alpha,beta,occMask,img0Grad,boundaryAlpha, verbose=not backward)
-		#nonOccSmooth = smoothLoss(flow, gt, alpha, beta)
+		if instanceParams["split"]:
+			nonOccSmooth= clampLoss(flow, gt, alpha,beta,occMask,img0Grad,boundaryAlpha, verbose=not backward)
+		else:
+			nonOccSmooth = smoothLoss(flow, gt, alpha, beta)
 		return nonOccSmooth
 
 import math

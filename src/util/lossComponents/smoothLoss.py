@@ -179,12 +179,12 @@ def smoothLoss(flow, gt, alpha, beta, verbose=False):
         neighborDiffV = tf.nn.conv2d(v,kernel,[1,1,1,1],padding="SAME") * gtMask
 
         diffs = tf.concat([neighborDiffU,neighborDiffV],3)
-	dists = charbonnierLoss(diffs, alpha, beta, 0.001)
+	dists = charbonnierLoss(diffs, alpha, beta, 0)
 	robustLoss = tf.reduce_sum(dists, axis=3, keep_dims=True)
 
 	scale = 448 / flow.shape[1].value
 	if verbose and scale == 1:
-        	tf.summary.scalar("smoothness", tf.reduce_mean(robustLoss))
+        	tf.summary.scalar("smoothness", tf.reduce_mean(robustLoss[:,2:-2,2:-2,:]))
 	return robustLoss
 
 
@@ -222,13 +222,13 @@ def clampLoss(flow,gt,alpha,beta,validPixelMask=None,img0Grad=None,boundaryAlpha
             		flow_smoothness = smoothLoss(flow, gt, alpha, beta, verbose=verbose)
 
             		multiplier_masks, normalizer = make_gt_masks(my_gt_mask, MAX_WIDTH)
-            		flow_hat = fixed_point_update(flow, GOL, 20, multiplier_masks, normalizer)
+            		flow_hat = fixed_point_update(flow, GOL, 10, multiplier_masks, normalizer)
 
             		fhat_smoothness = smoothLoss(flow_hat, gt, alpha, beta, verbose=verbose)
 
             		diffs = flow - flow_hat
 
-			dists = charbonnierLoss(diffs, alpha, beta, 0.001)
+			dists = charbonnierLoss(diffs, alpha, beta, 0)
 			
 			if robustLoss is None:
 				robustLoss = tf.reduce_sum(dists, axis=3, keep_dims=True)

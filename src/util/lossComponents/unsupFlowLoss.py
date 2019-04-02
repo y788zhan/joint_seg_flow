@@ -5,7 +5,7 @@ from gradLoss import *
 from smoothLoss import *
 from smoothLoss2nd import *
 from asymmetricSmoothLoss import *
-
+from epeLoss import *
 def unsupFlowLoss(flow,flowB,frame0,frame1,validPixelMask,instanceParams, backward=False):
 	with tf.variable_scope(None,default_name="unsupFlowLoss"):
 		# hyperparams
@@ -26,8 +26,8 @@ def unsupFlowLoss(flow,flowB,frame0,frame1,validPixelMask,instanceParams, backwa
 		lossComponents = instanceParams["lossComponents"]
 
 		# helpers
- 	        size = [flow.shape[1], flow.shape[2]]
-		scale = 448 / size[0].value
+ 	        size = [flow.shape[1].value, flow.shape[2].value]
+		scale = 448 / size[0]
 		rgb0 = tf.image.resize_bilinear(frame0["rgbNorm"], size)
 		rgb1 = tf.image.resize_bilinear(frame1["rgbNorm"], size)
 		grad0 = tf.image.resize_bilinear(frame0["grad"], size)
@@ -67,7 +67,7 @@ def unsupFlowLoss(flow,flowB,frame0,frame1,validPixelMask,instanceParams, backwa
 		# smooth2ndMasked = smoothLoss2nd(flow,smooth2ndAlpha,smooth2ndBeta,validPixelMask,imgGrad,boundaryAlpha)
 
 		# apply masking
-		photoMasked = photo * occInvalidMask
+		photoMasked = photo
 		# gradMasked = grad * occInvalidMask
 
 		# average spatially
@@ -93,6 +93,9 @@ def unsupFlowLoss(flow,flowB,frame0,frame1,validPixelMask,instanceParams, backwa
 		# finalLoss = photoAvg + smoothAvg
 		if not instanceParams["segmentationConsistency"]:
 			segAvg = tf.zeros_like(smoothAvg)
+		#smoothAvg = tf.zeros((2,1))
+		#segAvg = tf.zeros((2, 1))
+		#photoAvg = tf.reduce_mean(epeLoss(flow), reduction_indices=[1,2]) * 1000.0
 		return photoAvg, smoothAvg, segAvg
 
 

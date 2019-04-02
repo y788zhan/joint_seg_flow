@@ -143,7 +143,7 @@ def fixed_point_update(flow, gamma, itr, multiplier_masks, normalizer):
         flow_copy1 = temp / (normalizer + gamma)
     return flow_copy1
 
-GOL = 0.25
+GOL = 1.0
 
 
 def smoothLoss(flow, gt, alpha, beta, verbose=False):
@@ -172,17 +172,19 @@ def smoothLoss(flow, gt, alpha, beta, verbose=False):
         gtMask = 1 - tf.square(gtMask)
 
         flowShape = flow.get_shape()
-	if verbose and flow.shape[1] == 448:
+	scale = 448 / flow.shape[1].value
+	
+	if verbose and scale == 1:
+		print('HELLO')
 		tf.summary.image("smooth_flow", flowToRgb1(flow))
         #tf.summary.image("downMask", gtMask[:,:,:,0])
         neighborDiffU = tf.nn.conv2d(u,kernel,[1,1,1,1],padding="SAME") * gtMask
         neighborDiffV = tf.nn.conv2d(v,kernel,[1,1,1,1],padding="SAME") * gtMask
 
         diffs = tf.concat([neighborDiffU,neighborDiffV],3)
-	dists = charbonnierLoss(diffs, alpha, beta, 0)
+	dists = charbonnierLoss(diffs, alpha, beta, 0.001)
 	robustLoss = tf.reduce_sum(dists, axis=3, keep_dims=True)
 
-	scale = 448 / flow.shape[1].value
 	if verbose and scale == 1:
         	tf.summary.scalar("smoothness", tf.reduce_mean(robustLoss[:,2:-2,2:-2,:]))
 	return robustLoss
@@ -228,7 +230,7 @@ def clampLoss(flow,gt,alpha,beta,validPixelMask=None,img0Grad=None,boundaryAlpha
 
             		diffs = flow - flow_hat
 
-			dists = charbonnierLoss(diffs, alpha, beta, 0)
+			dists = charbonnierLoss(diffs, alpha, beta, 0.001)
 			
 			if robustLoss is None:
 				robustLoss = tf.reduce_sum(dists, axis=3, keep_dims=True)

@@ -25,10 +25,10 @@ class TrainingData:
 			# else:
 			# 	assert False, "unknown dataset: " + instanceParams["dataset"]
 			datasetRoot = '../example_data/'
-			frame0Path = datasetRoot + 'datalists/swing_11_im0.txt'
-			frame1Path = datasetRoot + 'datalists/swing_11_im1.txt'
-			gt0Path = datasetRoot + 'datalists/swing_11_gt0.txt'
-			gt1Path = datasetRoot + 'datalists/swing_11_gt1.txt'
+			frame0Path = datasetRoot + 'datalists/swing_im0.txt'
+			frame1Path = datasetRoot + 'datalists/swing_im1.txt'
+			gt0Path = datasetRoot + 'datalists/swing_gt0.txt'
+			gt1Path = datasetRoot + 'datalists/swing_gt1.txt'
 			desiredHeight = 480
 			desiredWidth = 854
 
@@ -69,8 +69,8 @@ class TrainingData:
 				1]),borderThicknessH,borderThicknessW)
 
 			#LRN skipped
-			# lrn0 = tf.nn.local_response_normalization(img0raw,depth_radius=2,alpha=(1.0/1.0),beta=0.7,bias=1)
-			# lrn1 = tf.nn.local_response_normalization(img1raw,depth_radius=2,alpha=(1.0/1.0),beta=0.7,bias=1)
+			lrn0 = tf.nn.local_response_normalization(imData0aug,depth_radius=2,alpha=(1.0/1.0),beta=0.7,bias=1)
+			lrn1 = tf.nn.local_response_normalization(imData1aug,depth_radius=2,alpha=(1.0/1.0),beta=0.7,bias=1)
 
 			#gradient images
 			imData0Gray = rgbToGray(img0raw)
@@ -82,14 +82,14 @@ class TrainingData:
 			# ----------expose tensors-----------
 			self.frame0 = {
 				"rgb": imData0aug[:,16:-16,11:-11,:],
-				"rgbNorm": imData0aug[:,16:-16,11:-11,:],
+				"rgbNorm": lrn0[:,16:-16,11:-11,:],
 				"grad": imData0Grad,
 				"gt": gt0raw[:,16:-16,11:-11,:]
 			}
 
 			self.frame1 = {
 				"rgb": imData1aug[:,16:-16,11:-11,:],
-				"rgbNorm": imData1aug[:,16:-16,11:-11,:],
+				"rgbNorm": lrn1[:,16:-16,11:-11,:],
 				"grad": imData1Grad,
 				"gt": gt1raw[:,16:-16,11:-11,:]
 			}

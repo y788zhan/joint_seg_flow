@@ -3,13 +3,13 @@
     "gradient": false,
     "boundaries": false,
     "smooth2nd": false,
-    "backward": true,
+    "backward": false,
     "asymmetricSmooth": true
   },
   "occlusion": false,
-  "multiscale": true,
-  "split": true,
-  "segmentationConsistency", false,
+  "multiscale": false,
+  "split": false,
+  "segmentationConsistency": false,
   "weightDecay": 0.0,
   "photoParams": {
     "scale": 255.0,
@@ -26,7 +26,7 @@
     "robustness": 0.9
   },
   "instanceName": "unsupFlownet", 
-  "flowScale": 255.0,
+  "flowScale": 20.0,
   "resnet": false,
   "gradParams": {
     "scale": 255.0,
@@ -43,7 +43,7 @@
   "smoothParams": {
     "scale": 1.0,
     "robustness": 1.0,
-    "weight": 2500
+    "weight": 10000.0
   },
   "boundaryAlpha": 6.5,
   "printFreq": 1000

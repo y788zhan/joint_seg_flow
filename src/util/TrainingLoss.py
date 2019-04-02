@@ -17,13 +17,13 @@ class TrainingLoss:
 	                pLossTotalF = sLossTotalF = segLossTotalF = 0
             	        pLossTotalB = sLossTotalB = segLossTotalB = 0
 	
-        	        #rel_weights = [1, 0.32, 0.3, 0.28, 0.08]
-			rel_weights = [1] * 5
+        	        rel_weights = np.array([12.7, 4.35, 3.9, 3.4, 1.1]) / 12.7
+			signs = [1, 1, -1, 1, 1]
 			# unsup loss
 			levels = len(networkF.flows) if instanceParams["multiscale"] else 1
             		for i in range(levels):
-                		predFlowF = networkF.flows[i]
-                		predFlowB = networkB.flows[i]
+                		predFlowF = networkF.flows[i] * signs[i]
+                		predFlowB = networkB.flows[i] * signs[i]
 
                 		if i > 0:
                     			predFlowF *= 20 / (2 ** i)
@@ -64,13 +64,13 @@ class TrainingLoss:
 				totalLoss = recLossF
 				tf.summary.scalar("recLossF",tf.reduce_mean(recLossF))
 
-			pGrad = tf.gradients(pLossF, predFlowF)[0]
-			sGrad = tf.gradients(sLossF, predFlowF)[0]
-			segGrad = tf.gradients(segLossF, predFlowF)[0]
+			pGrad = tf.gradients(pLossTotalF, networkF.flows[0])[0]
+			#sGrad = tf.gradients(sLossTotalF, networkF.flows[0])[0]
+			# segGrad = tf.gradients(segLossTotalF, predFlowF)[0]
 			# tf.summary.image("photo_gradients", flowToRgb1(pGrad, 'saturation'))
 			# tf.summary.image("smooth_gradients", flowToRgb1(sGrad, 'saturation'))
 			# tf.summary.image("seg_gradients", flowToRgb1(segGrad, "saturation"))
-			# tf.summary.scalar("mean_photo_grad", tf.reduce_mean(tf.abs(pGrad)))
-			# tf.summary.scalar("mean_smooth_grad", tf.reduce_mean(tf.abs(sGrad)))
+			tf.summary.scalar("mean_photo_grad", tf.reduce_mean(tf.abs(pGrad)))
+			#tf.summary.scalar("mean_smooth_grad", tf.reduce_mean(tf.abs(sGrad)))
 			# tf.summary.scalar("mean_seg_grad", tf.reduce_mean(tf.abs(segGrad)))
 			self.loss = totalLoss

@@ -43,7 +43,7 @@
   "smoothParams": {
     "scale": 1.0,
     "robustness": 1.0,
-    "weight": 10000.0
+    "weight": 1.0e4
   },
   "boundaryAlpha": 6.5,
   "printFreq": 1000

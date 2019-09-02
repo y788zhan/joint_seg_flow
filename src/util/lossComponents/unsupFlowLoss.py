@@ -26,7 +26,7 @@ def unsupFlowLoss(flow,flowB,frame0,frame1,validPixelMask,instanceParams, backwa
 		lossComponents = instanceParams["lossComponents"]
 
 		# helpers
- 	        size = [flow.shape[1], flow.shape[2]]
+		size = [flow.shape[1], flow.shape[2]]
 		scale = 448 / size[0].value
 		rgb0 = tf.image.resize_bilinear(frame0["rgbNorm"], size)
 		rgb1 = tf.image.resize_bilinear(frame1["rgbNorm"], size)
@@ -45,14 +45,10 @@ def unsupFlowLoss(flow,flowB,frame0,frame1,validPixelMask,instanceParams, backwa
 		# loss components
 		photo = photoLoss(flow,rgb0,rgb1,photoAlpha,photoBeta)
 
-		occMask = occluMask(flow, flowB, alpha2 = 0.5 / (scale ** 2), backward=backward)
-		photo = photo * (1.0 - occMask) + 100 * occMask
+		# occMask = occluMask(flow, flowB, alpha2 = 0.5 / (scale ** 2), backward=backward)
+		# photo = photo * (1.0 - occMask) + 100 * occMask
 		if flow.shape[1] == 448:
 			tf.summary.image("occlusion_mask", occMask)
-
-		seg = photoLoss(flow, gt, gt1, 1, 1)
-		#seg = seg * 0
-		seg = seg * 1e4 * (1.0 - occMask)
 
 		# grad = gradLoss(flow,grad0,grad1,gradAlpha,gradBeta)
 		imgGrad = None
@@ -61,9 +57,6 @@ def unsupFlowLoss(flow,flowB,frame0,frame1,validPixelMask,instanceParams, backwa
 
 		if lossComponents["asymmetricSmooth"]:
 			smoothMasked = asymmetricSmoothLoss(flow,gt,instanceParams,None,validPixelMask,imgGrad,boundaryAlpha, backward)
-		else:
-			smoothMasked = smoothLoss(flow,smoothAlpha,smoothBeta,validPixelMask,imgGrad,boundaryAlpha)
-		# smooth2ndMasked = smoothLoss2nd(flow,smooth2ndAlpha,smooth2ndBeta,validPixelMask,imgGrad,boundaryAlpha)
 
 		# apply masking
 		photoMasked = photo * occInvalidMask
@@ -71,26 +64,17 @@ def unsupFlowLoss(flow,flowB,frame0,frame1,validPixelMask,instanceParams, backwa
 
 		# average spatially
 		photoAvg = tf.reduce_mean(photoMasked,reduction_indices=[1,2])
-		# gradAvg = tf.reduce_mean(gradMasked,reduction_indices=[1,2])
 		smoothAvg = tf.reduce_mean(smoothMasked,reduction_indices=[1,2])
-		# smooth2ndAvg = tf.reduce_mean(smooth2ndMasked,reduction_indices=[1,2])
-		segAvg = tf.reduce_mean(seg, reduction_indices=[1,2])
-
-		# weight loss terms
-		# gradAvg = gradAvg*gradReg
-		# smooth2ndAvg = smooth2ndAvg*smooth2ndReg
 
 		# summaries ----------------------------
 		photoLossName = "photoLossB" if backward else "photoLossF"
 		smoothLossName = "smoothLossB" if backward else "smoothLossF"
 		if scale == 1:
 			tf.summary.scalar(photoLossName,tf.reduce_mean(photoAvg))
-			tf.summary.scalar("segLossF", tf.reduce_mean(segAvg))
-		# tf.summary.scalar(smoothLossName,tf.reduce_mean(smoothAvg))
+			# tf.summary.scalar(smoothLossName,tf.reduce_mean(smoothAvg))
 		smoothAvg = smoothAvg*smoothReg
-		# final loss
-		# finalLoss = photoAvg + smoothAvg
-		return photoAvg, smoothAvg, segAvg
+
+		return photoAvg, smoothAvg
 
 
 def occluMask(flowF, flowB, alpha1=0.01, alpha2=0.5, backward=False):

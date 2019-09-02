@@ -6,7 +6,7 @@ from smoothLoss import *
 from smoothLoss2nd import *
 from asymmetricSmoothLoss import *
 from epeLoss import *
-def unsupFlowLoss(flow,flowB,fhat,frame0,frame1,validPixelMask,instanceParams, backward=False):
+def unsupFlowLoss(flow,flowB,fhat,frame0,frame1,validPixelMask,instanceParams, gol, backward=False):
 	with tf.variable_scope(None,default_name="unsupFlowLoss"):
 		# hyperparams
 		photoAlpha = instanceParams["photoParams"]["robustness"]
@@ -25,6 +25,8 @@ def unsupFlowLoss(flow,flowB,fhat,frame0,frame1,validPixelMask,instanceParams, b
 		boundaryAlpha = instanceParams["boundaryAlpha"]
 		lossComponents = instanceParams["lossComponents"]
 
+		# gol = instanceParams["gol"]
+		tf.summary.scalar("gol", tf.reduce_mean(gol))
 		# helpers
  	        # size = [flow.shape[1].value, flow.shape[2].value]
 		# scale = 448 / size[0]
@@ -48,14 +50,19 @@ def unsupFlowLoss(flow,flowB,fhat,frame0,frame1,validPixelMask,instanceParams, b
 		if lossComponents["boundaries"]:
 			imgGrad = grad0
 
-		smoothMasked = asymmetricSmoothLoss(flow,fhat,gt,instanceParams,None,validPixelMask,imgGrad,boundaryAlpha, backward)
+		smoothMasked = asymmetricSmoothLoss(flow,gt,instanceParams,None,validPixelMask,imgGrad,boundaryAlpha, backward)
+		clamp = clampLoss(flow, fhat) * gol
+		clamp = tf.reduce_mean(clamp, axis=-1, keepdims = True)
 
-		smoothAvg = tf.reduce_mean(smoothMasked,reduction_indices=[1,2])
+		lossAvg = tf.reduce_mean(smoothMasked + clamp,reduction_indices=[1,2])
+		lossAvg = lossAvg*smoothReg
 
-		smoothLossName = "smoothLossB" if backward else "smoothLossF"
-		tf.summary.scalar("clampLossF",tf.reduce_mean(smoothAvg))
-		smoothAvg = smoothAvg*smoothReg
-		return smoothAvg
+		cgrad = tf.gradients(clamp, flow)
+		tf.summary.scalar("clamp_gradient", smoothReg * tf.reduce_mean(tf.abs(cgrad[0])))
+		sgrad = tf.gradients(smoothMasked, flow)
+		tf.summary.scalar("smooth_gradient", smoothReg * tf.reduce_mean(tf.abs(sgrad[0])))
+
+		return lossAvg
 
 
 def occluMask(flowF, flowB, alpha1=0.01, alpha2=0.5, backward=False):

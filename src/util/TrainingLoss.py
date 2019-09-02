@@ -23,7 +23,10 @@ class TrainingLoss:
 			fhat_copy = fhat * 1.0
 			fhat_copy = tf.stop_gradient(fhat_copy)
 
-    			sLossF = unsupFlowLoss(predFlowF,predFlowB,fhat_copy,frame0,frame1,vpm,instanceParams)
+			gol = tf.placeholder(tf.float32, shape = fhat.get_shape().as_list())
+			self.gol = gol
+
+    			sLossF = unsupFlowLoss(predFlowF,predFlowB,fhat_copy,frame0,frame1,vpm,instanceParams,self.gol)
                 	sLossTotalF += sLossF
 
             		recLossF = pLossTotalF + sLossTotalF + segLossTotalF

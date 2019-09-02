@@ -2,7 +2,7 @@ import tensorflow as tf
 from components import *
 from smoothLoss import *
 
-def asymmetricSmoothLoss(flow,fhat,gt,instanceParams,occMask,validPixelMask,img0Grad=None,boundaryAlpha=0, backward=False):
+def asymmetricSmoothLoss(flow,gt,instanceParams,occMask,validPixelMask,img0Grad=None,boundaryAlpha=0, backward=False):
 	"""
 	modifies gradients so that smoothness can only go from non-occluded to occluded areas
 	"""
@@ -12,7 +12,7 @@ def asymmetricSmoothLoss(flow,fhat,gt,instanceParams,occMask,validPixelMask,img0
 		occAlpha = instanceParams["smoothOccParams"]["robustness"]
 		occBeta = instanceParams["smoothOccParams"]["scale"]
 
-		nonOccSmooth = smoothLoss(flow, fhat, gt, alpha, beta, verbose=not backward)
+		nonOccSmooth = smoothLoss(flow, gt, alpha, beta, verbose=not backward)
 		return nonOccSmooth
 
 import math

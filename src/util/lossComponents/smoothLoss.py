@@ -30,7 +30,7 @@ def make_mask(kernel_width, height, width, horizontal = True):
 			mask[height - i - 1,:] = 0
 	mask = tf.cast(mask, tf.float32)
 	# return tf.expand_dims(mask, 0)
-	return tf.stack([mask, mask]) # batch_size = 2
+	return tf.stack([mask, mask]) # batch_size is 2
 
 
 MAX_WIDTH = 1
@@ -163,22 +163,22 @@ def smoothLoss(flow, gt, alpha, beta, verbose=False):
     ],dtype=tf.float32),perm=[3,2,1,0])
 
     with tf.variable_scope(None,default_name="smoothLoss"):
-        u = tf.slice(flow,[0,0,0,0],[-1,-1,-1,1])
-        v = tf.slice(flow,[0,0,0,1],[-1,-1,-1,-1])
+		u = tf.slice(flow,[0,0,0,0],[-1,-1,-1,1])
+		v = tf.slice(flow,[0,0,0,1],[-1,-1,-1,-1])
 
-        gtMask = tf.nn.atrous_conv2d(gt, kernel, rate=1, padding="SAME")
-        gtMask = 1 - tf.square(gtMask)
+		gtMask = tf.nn.atrous_conv2d(gt, kernel, rate=1, padding="SAME")
+		gtMask = 1 - tf.square(gtMask)
 
-        flowShape = flow.get_shape()
-	tf.summary.image("smooth_flow", flowToRgb1(flow))
-        neighborDiffU = tf.nn.conv2d(u,kernel,[1,1,1,1],padding="SAME") * gtMask
-        neighborDiffV = tf.nn.conv2d(v,kernel,[1,1,1,1],padding="SAME") * gtMask
+		flowShape = flow.get_shape()
+		tf.summary.image("smooth_flow", flowToRgb1(flow))
+		neighborDiffU = tf.nn.conv2d(u,kernel,[1,1,1,1],padding="SAME") * gtMask
+		neighborDiffV = tf.nn.conv2d(v,kernel,[1,1,1,1],padding="SAME") * gtMask
 
-        diffs = tf.concat([neighborDiffU,neighborDiffV],3)
-	dists = charbonnierLoss(diffs, alpha, beta, 0.001)
-	robustLoss = tf.reduce_sum(dists, axis=3, keep_dims=True)
+		diffs = tf.concat([neighborDiffU,neighborDiffV],3)
+		dists = charbonnierLoss(diffs, alpha, beta, 0.001)
+		robustLoss = tf.reduce_sum(dists, axis=3, keep_dims=True)
 
-        tf.summary.scalar("smooth_loss", tf.reduce_mean(robustLoss[:,2:-2,2:-2,:]))
+		tf.summary.scalar("smooth_loss", tf.reduce_mean(robustLoss[:,2:-2,2:-2,:]))
 	
 	return robustLoss
 
@@ -186,7 +186,6 @@ def smoothLoss(flow, gt, alpha, beta, verbose=False):
 def clampLoss(flow, fhat):
 	diff = flow - fhat
 	loss = charbonnierLoss(diff, 1, 1, 0.001)
-	# loss = tf.reduce_sum(dist, axis=3, keep_dims=True)
 
 	tf.summary.scalar("clamping", tf.reduce_mean(loss))
 	return loss

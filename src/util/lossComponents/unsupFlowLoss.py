@@ -25,23 +25,12 @@ def unsupFlowLoss(flow,flowB,fhat,frame0,frame1,validPixelMask,instanceParams, g
 		boundaryAlpha = instanceParams["boundaryAlpha"]
 		lossComponents = instanceParams["lossComponents"]
 
-		# gol = instanceParams["gol"]
 		tf.summary.scalar("gol", tf.reduce_mean(gol))
-		# helpers
- 	        # size = [flow.shape[1].value, flow.shape[2].value]
-		# scale = 448 / size[0]
+
 		rgb0 = frame0["rgbNorm"]
 		rgb1 = frame1["rgbNorm"]
-		# grad0 = tf.image.resize_bilinear(frame0["grad"], size)
-		# grad1 = tf.image.resize_bilinear(frame1["grad"], size)
 		gt = frame0["gt"]
-		# gt1 = tf.image.resize_bilinear(frame1["gt"], size)
-		# if not backward:
-		# 	tf.summary.image("rgb0", rgb0)
-		# 	tf.summary.image("rgb1", rgb1)
-		# 	tf.summary.image("gt", gt)
-		# masking from simple occlusion/border
-		#occMask = borderOcclusionMask(flow) # occ if goes off image
+
 		occInvalidMask = 1#validPixelMask*occMask # occluded and invalid
 
 		photo = photoLoss(flow, rgb0, rgb1, photoAlpha, photoBeta)
@@ -53,6 +42,10 @@ def unsupFlowLoss(flow,flowB,fhat,frame0,frame1,validPixelMask,instanceParams, g
 		smoothMasked = asymmetricSmoothLoss(flow,gt,instanceParams,None,validPixelMask,imgGrad,boundaryAlpha, backward)
 		clamp = clampLoss(flow, fhat) * gol
 		clamp = tf.reduce_mean(clamp, axis=-1, keepdims = True)
+
+		# assign lossAvg to this to train epe against HS solution
+		# epe = epeLoss(flow)
+		# epe *= 1.0e4
 
 		lossAvg = tf.reduce_mean(smoothMasked + clamp,reduction_indices=[1,2])
 		lossAvg = lossAvg*smoothReg

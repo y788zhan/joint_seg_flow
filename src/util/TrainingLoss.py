@@ -14,11 +14,11 @@ class TrainingLoss:
 			frame1 = trainingData.frame1
 			vpm = trainingData.validMask
 
-	                pLossTotalF = sLossTotalF = segLossTotalF = 0
-            	        pLossTotalB = sLossTotalB = segLossTotalB = 0
+			pLossTotalF = sLossTotalF = segLossTotalF = 0
+			pLossTotalB = sLossTotalB = segLossTotalB = 0
 	
-                	predFlowF = networkF.flows[0]
-                	predFlowB = networkB.flows[0]
+			predFlowF = networkF.flows[0]
+			predFlowB = networkB.flows[0]
 
 			fhat_copy = fhat * 1.0
 			fhat_copy = tf.stop_gradient(fhat_copy)
@@ -26,11 +26,11 @@ class TrainingLoss:
 			gol = tf.placeholder(tf.float32, shape = fhat.get_shape().as_list())
 			self.gol = gol
 
-    			sLossF = unsupFlowLoss(predFlowF,predFlowB,fhat_copy,frame0,frame1,vpm,instanceParams,self.gol)
-                	sLossTotalF += sLossF
+			sLossF = unsupFlowLoss(predFlowF,predFlowB,fhat_copy,frame0,frame1,vpm,instanceParams,self.gol)
+			sLossTotalF += sLossF
 
-            		recLossF = pLossTotalF + sLossTotalF + segLossTotalF
-            		recLossB = pLossTotalB + sLossTotalB + segLossTotalB
+			recLossF = pLossTotalF + sLossTotalF + segLossTotalF
+			recLossB = pLossTotalB + sLossTotalB + segLossTotalB
 			# final loss, schedule backward unsup loss
 			recLossBWeight = 0.5  #  [0,0.5]
 			self.recLossBWeight = recLossBWeight # used to set weight at runtime

@@ -9,6 +9,7 @@ def epeLoss(flow):
 	with tf.variable_scope(None, default_name="epeLoss"):
 		size = [flow.shape[1].value, flow.shape[2].value]
 		scale = 448 / size[0]
+        # usually not needed. only used for multiscale experiments
 		flowDiff = flow - tf.image.resize_bilinear(ground_truth / (2 ** (scale - 1)), size)
 		flowDist = charbonnierLoss(flowDiff, 1, 1, 0.001)
 		return tf.reduce_sum(flowDist, axis=3, keep_dims=True)

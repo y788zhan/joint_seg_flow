@@ -25,6 +25,9 @@ def unsupFlowLoss(flow,flowB,frame0,frame1,validPixelMask,instanceParams, backwa
 		boundaryAlpha = instanceParams["boundaryAlpha"]
 		lossComponents = instanceParams["lossComponents"]
 
+		# gamma over lambda
+		GOL = 10.0
+
 		# helpers
 		size = [flow.shape[1], flow.shape[2]]
 		scale = 448 / size[0].value
@@ -56,7 +59,7 @@ def unsupFlowLoss(flow,flowB,frame0,frame1,validPixelMask,instanceParams, backwa
 			imgGrad = grad0
 
 		if lossComponents["asymmetricSmooth"]:
-			smoothMasked = asymmetricSmoothLoss(flow,gt,instanceParams,None,validPixelMask,imgGrad,boundaryAlpha, backward)
+			smoothMasked = asymmetricSmoothLoss(flow,gt,instanceParams,None,validPixelMask,imgGrad,boundaryAlpha, backward,GOL=GOL)
 
 		# apply masking
 		photoMasked = photo * occInvalidMask

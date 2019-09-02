@@ -143,8 +143,6 @@ def fixed_point_update(flow, gamma, itr, multiplier_masks, normalizer):
         flow_copy1 = temp / (normalizer + gamma)
     return flow_copy1
 
-GOL = 0.25
-
 
 def smoothLoss(flow, gt, alpha, beta, verbose=False):
 	kernel = tf.transpose(tf.constant([\
@@ -188,7 +186,7 @@ def smoothLoss(flow, gt, alpha, beta, verbose=False):
 
 
 
-def clampLoss(flow,gt,alpha,beta,validPixelMask=None,img0Grad=None,boundaryAlpha=0,verbose=False):
+def clampLoss(flow,gt,alpha,beta,validPixelMask=None,img0Grad=None,boundaryAlpha=0,verbose=False,GOL=1.0):
 	"""
 	smoothness loss, includes boundaries if img0Grad != None
 	"""

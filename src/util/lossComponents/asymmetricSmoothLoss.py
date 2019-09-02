@@ -14,6 +14,8 @@ def asymmetricSmoothLoss(flow,gt,instanceParams,occMask,validPixelMask,img0Grad=
 
 		# non occluded
 		nonOccSmooth= clampLoss(flow, gt, alpha,beta,occMask,img0Grad,boundaryAlpha, verbose=not backward)
+
+        # not-split. uncomment this, and comment above to turn off splitting
 		#nonOccSmooth = smoothLoss(flow, gt, alpha, beta)
 		return nonOccSmooth
 

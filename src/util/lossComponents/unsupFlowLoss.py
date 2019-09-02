@@ -45,7 +45,7 @@ def unsupFlowLoss(flow,flowB,fhat,frame0,frame1,validPixelMask,instanceParams, g
 
 		# assign lossAvg to this to train epe against HS solution
 		# epe = epeLoss(flow)
-		# epe *= 1.0e4
+		# epe = 1.0e4 * tf.reduce_mean(epe, reduction_indices=[1,2])
 
 		lossAvg = tf.reduce_mean(smoothMasked + clamp,reduction_indices=[1,2])
 		lossAvg = lossAvg*smoothReg

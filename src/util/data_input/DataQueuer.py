@@ -16,7 +16,6 @@ class DataQueuer(object):
 		self.n_threads = n_threads
 		self.random_fetch = random_fetch
 		self.data_readers = data_readers
-
 		with tf.variable_scope(None,default_name="queuer"):
 			# ensure all readers have the same number of data
 			self.n_data = data_readers[0].n_data
@@ -25,7 +24,6 @@ class DataQueuer(object):
 				assert self.n_data == reader.n_data, "readers do not read the same number of data"
 
 			assert len(data_readers) == len(pre_processors), "number of pre_processor sets not equal number of data readers"
-
 			# thread lock
 			self.lock = threading.Lock()
 
@@ -36,7 +34,6 @@ class DataQueuer(object):
 			for it,reader in enumerate(data_readers):
 				# pass reader through proprocessor
 				processorList = pre_processors[it]
-
 				curDataSource = reader.data_out
 				curDataShape = reader.data_shape
 				curDataType = reader.data_type
@@ -47,7 +44,6 @@ class DataQueuer(object):
 				data_outputs.append(curDataSource)
 				data_shapes.append(curDataShape)
 				data_types.append(curDataType)
-
 			#queue
 			self.queue = tf.FIFOQueue(shapes=data_shapes, dtypes=data_types, capacity=n_threads*8)
 			self.enqueue_op = self.queue.enqueue(data_outputs)

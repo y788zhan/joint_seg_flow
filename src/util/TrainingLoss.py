@@ -17,10 +17,11 @@ class TrainingLoss:
 			vpm = trainingData.validMask
 
 			# unsup loss
-			recLossF = unsupFlowLoss(predFlowF,predFlowB,frame0,frame1,vpm,instanceParams)
+			pLossF, sLossF = unsupFlowLoss(predFlowF,predFlowB,frame0,frame1,vpm,instanceParams)
+			recLossF = pLossF + sLossF
 			if lossComponents["backward"]:
-				recLossB = unsupFlowLoss(predFlowB,predFlowF,frame1,frame0,vpm,instanceParams)
-
+				pLossB, sLossB = unsupFlowLoss(predFlowB,predFlowF,frame1,frame0,vpm,instanceParams, backward=True)
+				recLossB = pLossB + sLossB
 			# weight decay
 			with tf.variable_scope(None,default_name="weightDecay"):
 				weightLoss = tf.reduce_sum(tf.stack([tf.nn.l2_loss(i) for i in tf.get_collection("weights")]))*weightDecay
@@ -34,7 +35,7 @@ class TrainingLoss:
 					recLossB*recLossBWeight + \
 					weightLoss
 				tf.summary.scalar("recLossF",tf.reduce_mean(recLossF*(1.0-recLossBWeight)))
-				tf.summary.scalar("recLossB",tf.reduce_mean(recLossF*recLossBWeight))
+				tf.summary.scalar("recLossB",tf.reduce_mean(recLossB*recLossBWeight))
 			else:
 				totalLoss = recLossF + weightLoss
 				tf.summary.scalar("recLossF",tf.reduce_mean(recLossF))
@@ -42,4 +43,10 @@ class TrainingLoss:
 			tf.summary.scalar("weightDecay",tf.reduce_mean(weightLoss))
 			tf.summary.scalar("totalLoss",tf.reduce_mean(totalLoss))
 
+			pGrad = tf.gradients(pLossF, predFlowF)[0]
+			sGrad = tf.gradients(sLossF, predFlowF)[0]
+			tf.summary.image("photo_gradients", flowToRgb1(pGrad, 'saturation'))
+			tf.summary.image("smooth_gradients", flowToRgb1(sGrad, 'saturation'))
+			tf.summary.scalar("mean_photo_grad", tf.reduce_mean(tf.abs(pGrad)))
+			tf.summary.scalar("mean_smooth_grad", tf.reduce_mean(tf.abs(sGrad)))
 			self.loss = totalLoss

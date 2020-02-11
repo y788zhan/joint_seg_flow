@@ -1,7 +1,7 @@
 import tensorflow as tf
 import math
 
-def flowToRgb(flow,zeroFlow="value"):
+def flowToRgb(flow,zeroFlow="saturation"):
 	with tf.variable_scope(None,default_name="flowToRgb"):
 		mag = tf.sqrt(tf.reduce_sum(flow**2,axis=-1))
 		ang180 = tf.atan2(flow[:,:,:,1],flow[:,:,:,0])
@@ -13,7 +13,9 @@ def flowToRgb(flow,zeroFlow="value"):
 
 		# normalize for hsv
 		largestMag = tf.reduce_max(mag,axis=[1,2])
-		magNorm = mag/largestMag
+		#import pdb; pdb.set_trace()
+		#magNorm = tf.stack([mag[0,:,:] / largestMag[0], mag[1,:,:] / largestMag[1]], axis=0)
+		magNorm = mag / largestMag
 		angNorm = ang/(math.pi*2)
 
 		if zeroFlow == "value":

@@ -3,8 +3,10 @@ def learningRateSchedule(baseLR, iteration):
 	"""
 	returns learning rate given training iteration
 	"""
-	if iteration > 500000:
+	if iteration > 600000:
 		return baseLR/8
+	elif iteration > 500000:
+		return baseLR/4
 	elif iteration > 400000:
 		return baseLR/4
 	elif iteration > 300000:

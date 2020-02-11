@@ -17,7 +17,6 @@ class DataReader(object):
 			self.data_list_path = [x[:-1] for x in f.readlines()]
 
 		self.n_data = len(self.data_list_path)
-
 		# defaults that are expected
 		self.data_out = None
 		self.data_type = None
@@ -25,4 +24,5 @@ class DataReader(object):
 
 	def get_feed_dict(self,index):
 		path = 	self.dataset_root + self.data_list_path[index]
+		# print path
 		return {self.data_path: path}

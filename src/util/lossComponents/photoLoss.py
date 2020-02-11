@@ -13,7 +13,8 @@ def photoLoss(flow,downsampledFrame0,downsampledFrame1,alpha,beta):
 
 		# photometric subtraction
 		photoDiff = downsampledFrame0 - warpedFrame2
-		photoDist = tf.reduce_sum(tf.abs(photoDiff),axis=3,keep_dims=True)
-		robustLoss = charbonnierLoss(photoDist,alpha,beta,0.001)
-
+		#photoDist = tf.reduce_sum(tf.abs(photoDiff),axis=3,keep_dims=True)
+		#robustLoss = charbonnierLoss(photoDist,alpha,beta,0.001)
+		photoDist = charbonnierLoss(tf.abs(photoDiff), alpha, beta, 0.001)
+		robustLoss = tf.reduce_sum(photoDist, axis=3, keep_dims=True)
 		return robustLoss

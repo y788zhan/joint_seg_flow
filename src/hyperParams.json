@@ -8,13 +8,13 @@
   },
   "weightDecay": 0.0,
   "photoParams": {
-    "scale": 360.0,
-    "robustness": 0.53
+    "scale": 1.0,
+    "robustness": 1.0
   },
   "baseLR": 1e-05,
-  "borderThicknessH": 0.1,
+  "borderThicknessH": 0.02,
   "iterations": 500000,
-  "borderThicknessW": 0.1,
+  "borderThicknessW": 0.02,
   "snapFreq": 5000,
   "batchSize": 2,
   "smoothOccParams": {
@@ -35,12 +35,12 @@
     "robustness": 0.21,
     "weight": 0.53
   },
-  "snapshotFreq": 10000,
+  "snapshotFreq": 20000,
   "smoothParams": {
-    "scale": 3.5,
-    "robustness": 0.28,
+    "scale": 1.0,
+    "robustness": 1.0,
     "weight": 0.64
   },
   "boundaryAlpha": 6.5,
-  "printFreq": 50
+  "printFreq": 1000
 }
